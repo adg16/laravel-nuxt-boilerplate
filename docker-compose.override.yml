@@ -1,0 +1,46 @@
+# Auto-loaded by `docker compose up` for local development. Swaps the nginx
+# image for a plain one serving the Nuxt dev server, switches php/queue to
+# their bind-mounted dev target, and adds the node dev-server container.
+services:
+  nginx:
+    build: !reset null
+    image: nginx:1.30-alpine
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d/app.dev.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - php
+      - node
+
+  php:
+    build:
+      target: dev
+    volumes:
+      - ./backend:/var/www/html
+
+  queue:
+    build:
+      target: dev
+    volumes:
+      - ./backend:/var/www/html
+
+  mariadb:
+    ports:
+      - "3306:3306"
+
+  redis:
+    ports:
+      - "6379:6379"
+
+  node:
+    build:
+      context: .
+      dockerfile: docker/node/Dockerfile
+      target: dev
+    volumes:
+      - ./frontend:/app
+      - node-modules:/app/node_modules
+    networks: [app]
+
+volumes:
+  node-modules:

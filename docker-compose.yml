@@ -1,0 +1,75 @@
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: docker/nginx/Dockerfile
+      target: prod
+    ports:
+      - "${APP_PORT:-80}:80"
+    depends_on:
+      - php
+    networks: [app]
+
+  php:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: prod
+    env_file: backend/.env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [app]
+
+  queue:
+    build:
+      context: .
+      dockerfile: docker/php/Dockerfile
+      target: prod
+    command: php artisan queue:work --tries=3 --sleep=3
+    env_file: backend/.env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks: [app]
+
+  mariadb:
+    image: mariadb:12
+    environment:
+      MARIADB_DATABASE: ${DB_DATABASE:-app}
+      MARIADB_USER: ${DB_USERNAME:-app}
+      MARIADB_PASSWORD: ${DB_PASSWORD:-secret}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root}
+    volumes:
+      - mariadb-data:/var/lib/mysql
+      - ./docker/mariadb/my.cnf:/etc/mysql/conf.d/custom.cnf:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [app]
+
+  redis:
+    image: redis:8-alpine
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redis-data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [app]
+
+networks:
+  app:
+
+volumes:
+  mariadb-data:
+  redis-data:

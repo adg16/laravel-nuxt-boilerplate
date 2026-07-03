@@ -1,0 +1,27 @@
+#!/bin/sh
+# Installed via `git config core.hooksPath .githooks` (done automatically by
+# `make setup`). Lints backend PHP with Pint and frontend code with ESLint,
+# but only invokes each one if relevant files are actually staged.
+set -e
+
+staged_backend=$(git diff --cached --name-only --diff-filter=ACMR -- 'backend/*.php')
+staged_frontend=$(git diff --cached --name-only --diff-filter=ACMR -- 'frontend/*.vue' 'frontend/*.ts' 'frontend/*.js' 'frontend/*.mjs')
+
+status=0
+
+if [ -n "$staged_backend" ]; then
+    echo "==> Linting backend (Pint)"
+    docker compose run --rm --no-deps php vendor/bin/pint --test || status=1
+fi
+
+if [ -n "$staged_frontend" ]; then
+    echo "==> Linting frontend (ESLint)"
+    docker compose run --rm --no-deps node npm run lint || status=1
+fi
+
+if [ "$status" -ne 0 ]; then
+    echo ""
+    echo "Lint failed. Run 'make lint-fix', re-stage the changes, and commit again."
+fi
+
+exit $status

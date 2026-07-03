@@ -1,0 +1,5 @@
+# Root-level env (docker-compose variables)
+.env
+
+# OS cruft
+.DS_Store
