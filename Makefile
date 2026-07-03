@@ -45,6 +45,7 @@ fresh:
 test:
 	docker compose exec php php artisan test
 	docker compose exec node npm run typecheck
+	docker compose exec node npm run test
 
 lint:
 	docker compose run --rm --no-deps php vendor/bin/pint --test

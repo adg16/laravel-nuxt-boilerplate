@@ -16,7 +16,7 @@ make up / make down                     # start / stop the stack (docker compose
 make sh-php / make sh-node              # shell into the php or node container
 make artisan ARGS="migrate:fresh --seed" # run any artisan command
 make fresh                              # migrate:fresh --seed
-make test                               # backend test suite + frontend typecheck
+make test                               # backend test suite + frontend typecheck + vitest
 make lint / make lint-fix               # Pint (backend) + ESLint (frontend) — check-only vs auto-fix
 make logs                               # tail all container logs
 ```
@@ -32,8 +32,9 @@ Frontend (run via `docker compose exec node`):
 ```
 docker compose exec node npm run lint        # eslint
 docker compose exec node npm run typecheck    # nuxt typecheck (vue-tsc)
+docker compose exec node npm run test         # vitest (component/composable tests)
 ```
-There is no frontend test runner configured — lint + typecheck are the only automated checks.
+Frontend tests use Vitest + `@nuxt/test-utils` in the Nuxt runtime environment (`vitest.config.ts` sets `environment: 'nuxt'`); specs live in `frontend/test/*.nuxt.test.ts`. There's no browser E2E — these are component/composable tests (mount via `mountSuspended`, mock auto-imports via `mockNuxtImport`). `make test` runs the backend suite, then frontend typecheck, then Vitest.
 
 `make setup` installs a git pre-commit hook (`git config core.hooksPath .githooks`; script at `.githooks/pre-commit`) that runs Pint (`--test`, check-only) when staged files touch `backend/*.php` and ESLint when they touch `frontend/*.{vue,ts,js,mjs}`, blocking the commit on failure — both invoked via `docker compose run --rm --no-deps`, so they work whether or not the stack is currently up. If editing this hook, note it lints the whole project rather than just staged files (simpler than wiring per-file lint-staged-style scoping, acceptable at this repo's size).
 
