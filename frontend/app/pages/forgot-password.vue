@@ -5,34 +5,53 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 definePageMeta({ layout: 'auth' })
 
 const auth = useAuthStore()
-const router = useRouter()
 const { loading, error, submit } = useSubmit()
+const sentMessage = ref('')
 
 const schema = z.object({
-  email: z.string().email('Enter a valid email address.'),
-  password: z.string().min(1, 'Password is required.')
+  email: z.string().email('Enter a valid email address.')
 })
 type Schema = z.output<typeof schema>
 
 const state = reactive({
-  email: '',
-  password: ''
+  email: ''
 })
 
 async function onSubmit(event: FormSubmitEvent<Schema>) {
   await submit(async () => {
-    await auth.login(event.data)
-    router.push('/')
-  }, 'Invalid credentials.')
+    sentMessage.value = await auth.forgotPassword(event.data.email)
+  })
 }
 </script>
 
 <template>
   <UPageCard
-    title="Welcome back"
-    description="Sign in to your account to continue."
+    title="Forgot your password?"
+    description="Enter your email and we'll send you a link to reset it."
   >
+    <div
+      v-if="sentMessage"
+      class="flex flex-col gap-4"
+    >
+      <UAlert
+        color="success"
+        variant="subtle"
+        icon="i-lucide-mail-check"
+        :description="sentMessage"
+      />
+      <UButton
+        to="/login"
+        variant="ghost"
+        color="neutral"
+        icon="i-lucide-arrow-left"
+        block
+      >
+        Back to sign in
+      </UButton>
+    </div>
+
     <UForm
+      v-else
       :schema="schema"
       :state="state"
       class="flex flex-col gap-4"
@@ -53,28 +72,6 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         />
       </UFormField>
 
-      <UFormField
-        label="Password"
-        name="password"
-      >
-        <template #hint>
-          <ULink
-            to="/forgot-password"
-            class="text-xs font-medium text-primary hover:text-primary/80"
-          >
-            Forgot password?
-          </ULink>
-        </template>
-        <PasswordInput
-          v-model="state.password"
-          autocomplete="current-password"
-          placeholder="••••••••"
-          icon="i-lucide-lock"
-          size="lg"
-          class="w-full"
-        />
-      </UFormField>
-
       <UAlert
         v-if="error"
         color="error"
@@ -89,8 +86,15 @@ async function onSubmit(event: FormSubmitEvent<Schema>) {
         block
         :loading="loading"
       >
-        Sign in
+        Send reset link
       </UButton>
+
+      <ULink
+        to="/login"
+        class="text-center text-sm text-muted hover:text-default"
+      >
+        Back to sign in
+      </ULink>
     </UForm>
   </UPageCard>
 </template>

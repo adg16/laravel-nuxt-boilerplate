@@ -9,7 +9,8 @@
     "preview": "nuxt preview",
     "postinstall": "nuxt prepare",
     "lint": "eslint .",
-    "typecheck": "nuxt typecheck"
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run"
   },
   "dependencies": {
     "@iconify-json/lucide": "^1.2.114",
@@ -17,12 +18,17 @@
     "@pinia/nuxt": "^0.11.3",
     "nuxt": "^4.4.8",
     "pinia": "^3.0.4",
-    "tailwindcss": "^4.3.1"
+    "tailwindcss": "^4.3.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
     "@nuxt/eslint": "^1.16.0",
+    "@nuxt/test-utils": "^4.0.3",
+    "@vue/test-utils": "^2.4.11",
     "eslint": "^10.6.0",
+    "happy-dom": "^20.10.6",
     "typescript": "^6.0.3",
+    "vitest": "^4.1.9",
     "vue-tsc": "^3.3.5"
   }
 }
