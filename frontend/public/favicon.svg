@@ -1,0 +1,17 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<style>
+.iconbg{fill:#EA580C}
+@media (prefers-color-scheme: dark){.iconbg{fill:#FB923C}}
+</style>
+<defs>
+<clipPath id="iconClip">
+<rect x="0" y="0" width="200" height="200" rx="46"/>
+</clipPath>
+</defs>
+<rect x="0" y="0" width="200" height="200" rx="46" class="iconbg"/>
+<g clip-path="url(#iconClip)">
+<circle cx="150" cy="40" r="70" fill="#FFFFFF" opacity="0.12"/>
+<circle cx="30" cy="170" r="60" fill="#000000" opacity="0.08"/>
+</g>
+<path d="M 116 42 L 66 118 L 96 118 L 88 158 L 140 82 L 108 82 Z" fill="#FFFFFF"/>
+</svg>

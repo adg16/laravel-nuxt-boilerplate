@@ -17,13 +17,12 @@ const { appName } = useRuntimeConfig().public
     <div class="auth-content">
       <div class="d-flex flex-column align-center text-center mb-8">
         <v-avatar
-          color="primary"
           rounded="lg"
           size="48"
         >
-          <v-icon
-            icon="mdi-hexagon"
-            size="24"
+          <v-img
+            src="/favicon.svg"
+            alt=""
           />
         </v-avatar>
         <span class="mt-3 text-title-large font-weight-bold">
