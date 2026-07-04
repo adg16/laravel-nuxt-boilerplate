@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const { appName } = useRuntimeConfig().public
+const { appName, appTagline } = useRuntimeConfig().public
 </script>
 
 <template>
@@ -27,6 +27,9 @@ const { appName } = useRuntimeConfig().public
         </v-avatar>
         <span class="mt-3 text-title-large font-weight-bold">
           {{ appName }}
+        </span>
+        <span class="mt-1 text-body-small text-medium-emphasis">
+          {{ appTagline }}
         </span>
       </div>
 

@@ -7,14 +7,15 @@ type NavItem = { title: string, icon: string, to: string }
 
 const navItems: NavItem[] = [
   { title: 'Dashboard', icon: 'mdi-view-dashboard-outline', to: '/' },
-  { title: 'Users', icon: 'mdi-account-group-outline', to: '/users' }
+  { title: 'Users', icon: 'mdi-account-group-outline', to: '/users' },
+  { title: 'Roles', icon: 'mdi-shield-account-outline', to: '/roles' }
 ]
 
 const auth = useAuthStore()
 const router = useRouter()
 const theme = useTheme()
 const display = useDisplay()
-const { appName } = useRuntimeConfig().public
+const { appName, appTagline } = useRuntimeConfig().public
 
 const isMobile = computed(() => display.mobile.value)
 
@@ -31,6 +32,38 @@ function toggleTheme() {
   theme.global.name.value = isDark.value ? 'light' : 'dark'
 }
 
+// Fullscreen toggle. Feature-detected so the button is hidden where the
+// Fullscreen API is unavailable (e.g. iOS Safari), and kept in sync via the
+// `fullscreenchange` event so the icon updates when the user exits with Esc.
+const isFullscreen = ref(false)
+const canFullscreen = ref(false)
+
+function syncFullscreen() {
+  isFullscreen.value = Boolean(document.fullscreenElement)
+}
+
+async function toggleFullscreen() {
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen()
+    } else {
+      await document.documentElement.requestFullscreen()
+    }
+  } catch {
+    // Non-critical: the browser may reject fullscreen (permissions/gesture
+    // rules). Leave the current state untouched rather than surfacing an error.
+  }
+}
+
+onMounted(() => {
+  canFullscreen.value = Boolean(document.documentElement.requestFullscreen)
+  document.addEventListener('fullscreenchange', syncFullscreen)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('fullscreenchange', syncFullscreen)
+})
+
 async function handleLogout() {
   await auth.logout()
   router.push('/login')
@@ -39,53 +72,9 @@ async function handleLogout() {
 
 <template>
   <div>
-    <v-navigation-drawer
-      v-model="drawer"
-      :permanent="!isMobile"
-      :rail="!isMobile"
-      :expand-on-hover="!isMobile"
-      elevation="3"
-    >
-      <v-list
-        nav
-        class="py-0"
-      >
-        <v-list-item class="brand-header">
-          <template #prepend>
-            <v-avatar
-              rounded="lg"
-              class="brand-logo"
-            >
-              <v-img
-                src="/favicon.svg"
-                alt=""
-              />
-            </v-avatar>
-          </template>
-          <template #title>
-            <span class="text-title-medium font-weight-bold">{{ appName }}</span>
-          </template>
-        </v-list-item>
-      </v-list>
-
-      <v-divider />
-
-      <v-list
-        nav
-        density="comfortable"
-      >
-        <v-list-item
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="item.title"
-          color="primary"
-          rounded="lg"
-        />
-      </v-list>
-    </v-navigation-drawer>
-
+    <!-- App bar is declared before the drawer so it claims the full width at the
+         top; the drawer then sits below it. This keeps the brand (logo + name +
+         tagline) always visible, independent of the drawer's collapse. -->
     <v-app-bar
       flat
       border="b"
@@ -96,11 +85,37 @@ async function handleLogout() {
           aria-label="Toggle menu"
           @click="drawer = !drawer"
         />
+        <NuxtLink
+          to="/"
+          class="d-flex align-center ga-3 text-decoration-none text-high-emphasis"
+        >
+          <v-avatar
+            rounded="lg"
+            size="36"
+          >
+            <v-img
+              src="/favicon.svg"
+              alt=""
+            />
+          </v-avatar>
+          <div class="d-flex flex-column">
+            <span class="brand-name text-title-medium font-weight-bold">{{ appName }}</span>
+            <span class="brand-tagline text-body-small text-medium-emphasis d-none d-sm-block">
+              {{ appTagline }}
+            </span>
+          </div>
+        </NuxtLink>
       </template>
 
-      <v-app-bar-title class="text-title-medium font-weight-medium" />
-
       <template #append>
+        <v-btn
+          v-if="canFullscreen"
+          :icon="isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
+          :aria-label="isFullscreen ? 'Exit full screen' : 'Enter full screen'"
+          variant="text"
+          @click="toggleFullscreen"
+        />
+
         <v-btn
           :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
           :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
@@ -157,30 +172,48 @@ async function handleLogout() {
       </template>
     </v-app-bar>
 
+    <v-navigation-drawer
+      v-model="drawer"
+      :permanent="!isMobile"
+      :rail="!isMobile"
+      :expand-on-hover="!isMobile"
+      elevation="2"
+    >
+      <v-list
+        nav
+        density="comfortable"
+      >
+        <v-list-item
+          v-for="item in navItems"
+          :key="item.to"
+          :to="item.to"
+          :prepend-icon="item.icon"
+          :title="item.title"
+          color="primary"
+          rounded="lg"
+        />
+      </v-list>
+    </v-navigation-drawer>
+
     <v-main>
-      <slot />
+      <!-- The layout owns the content shell: consistent page padding plus the
+           breadcrumb/title header (driven by each page's `breadcrumb` meta), so
+           pages only render their body. -->
+      <v-container
+        fluid
+        class="pa-4 pa-md-6"
+      >
+        <AppBreadcrumbs class="mb-6" />
+        <slot />
+      </v-container>
     </v-main>
   </div>
 </template>
 
 <style scoped>
-/* Match the app bar's 64px height so the drawer's header divider lines up with
-   the app bar's bottom border. */
-.brand-header {
-  min-height: 64px;
-}
-
-/* Keep the logo a constant 36px in both the collapsed rail and the expanded
-   drawer. We size it via the avatar's CSS variable (not the `size` prop, whose
-   inline width/height would be overridden by Vuetify's rail rule); scoped styles
-   are unlayered and therefore win over that layered rail rule.
-
-   The 36px logo and the 24px nav icons share the same left edge, so the larger
-   logo's centre sits (36 − 24) / 2 = 6px further right. Nudge it back 6px in
-   both states so its centre stays on the nav-icon column and its left margin is
-   identical whether the drawer is collapsed or expanded. */
-.brand-logo {
-  --v-avatar-height: 36px;
-  transform: translateX(-6px);
+/* Tighten the two brand lines so the name + tagline fit the app bar's height. */
+.brand-name,
+.brand-tagline {
+  line-height: 1.25;
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-const auth = useAuthStore()
+definePageMeta({ breadcrumb: 'Dashboard' })
 
 const stats = [
   { label: 'Total Users', value: '1,204', icon: 'mdi-account-group-outline', color: 'primary' },
@@ -23,19 +23,7 @@ const statusColor: Record<string, string> = {
 </script>
 
 <template>
-  <v-container
-    fluid
-    class="pa-4 pa-md-6"
-  >
-    <div class="mb-6">
-      <h1 class="text-headline-small font-weight-bold">
-        Dashboard
-      </h1>
-      <p class="text-body-medium text-medium-emphasis">
-        Welcome back, {{ auth.user?.name ?? auth.user?.email }}.
-      </p>
-    </div>
-
+  <div>
     <v-row>
       <v-col
         v-for="stat in stats"
@@ -127,5 +115,5 @@ const statusColor: Record<string, string> = {
         </tbody>
       </v-table>
     </v-card>
-  </v-container>
+  </div>
 </template>

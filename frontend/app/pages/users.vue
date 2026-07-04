@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ breadcrumb: 'Users' })
+
 // Static placeholder data — swap for a real API-backed list later.
 const users = [
   { name: 'Jane Cooper', email: 'jane@example.com', role: 'Admin', status: 'Active' },
@@ -18,26 +20,15 @@ const statusColor: Record<string, string> = {
 </script>
 
 <template>
-  <v-container
-    fluid
-    class="pa-4 pa-md-6"
-  >
-    <div class="d-flex flex-wrap align-center ga-4 mb-6">
-      <div class="mr-auto">
-        <h1 class="text-headline-small font-weight-bold">
-          Users
-        </h1>
-        <p class="text-body-medium text-medium-emphasis">
-          Manage the people who have access to this workspace.
-        </p>
-      </div>
+  <div>
+    <AppPageHeader description="Manage the people who have access to this workspace.">
       <v-btn
         color="primary"
         prepend-icon="mdi-plus"
       >
         New User
       </v-btn>
-    </div>
+    </AppPageHeader>
 
     <v-card
       border
@@ -93,5 +84,5 @@ const statusColor: Record<string, string> = {
         </tbody>
       </v-table>
     </v-card>
-  </v-container>
+  </div>
 </template>

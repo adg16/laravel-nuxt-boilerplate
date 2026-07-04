@@ -31,7 +31,9 @@ export default defineNuxtConfig({
       apiBase: '/api',
       // Displayed app name; override with NUXT_PUBLIC_APP_NAME (baked in at
       // build/generate time since this is a static SPA — no runtime server).
-      appName: 'My App'
+      appName: 'LarNux',
+      // Short tagline shown under the brand; override with NUXT_PUBLIC_APP_TAGLINE.
+      appTagline: 'Boilerplate for building Laravel + Nuxt apps'
     }
   },
 
