@@ -5,13 +5,16 @@ A reusable, dockerized starting point for internal/backoffice web apps: a Larave
 ## Stack
 
 - **Backend**: Laravel 13 (PHP 8.5), API-only — no Blade views
-- **Frontend**: Nuxt 4 (`ssr: false`), Vuetify 4 (Material Design), Pinia
+- **Frontend**: Nuxt 4 (`ssr: false`), Pinia
+- **UI components**: Vuetify 4 (Material Design) with MDI icons (`@mdi/font`)
 - **Auth**: Laravel Sanctum SPA (stateful cookie session + CSRF)
 - **Database**: MariaDB
 - **Cache / session / queue**: Redis (separate logical DBs each)
 - **Web server**: nginx — fronts both the API and the SPA on the same origin
 
 nginx routes `/api`, `/sanctum`, and `/up` to PHP-FPM; everything else goes to the Nuxt dev server in development, or a static `nuxi generate` build in production (no Node process in prod).
+
+Vuetify is wired up manually via `vite-plugin-vuetify` and a Nuxt plugin (`frontend/app/plugins/vuetify.ts`) — there's no Tailwind. That plugin is the single place for the theme (brand colors, light/dark) and app-wide component defaults. Forms use `v-form` + `v-text-field` with rules generated from Zod schemas (`frontend/app/utils/validation.ts`).
 
 ## Repo layout
 
