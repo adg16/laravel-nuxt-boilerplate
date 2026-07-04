@@ -1,5 +1,8 @@
 <script setup lang="ts">
-definePageMeta({ breadcrumb: 'Users' })
+definePageMeta({
+  breadcrumb: 'Users',
+  subtitle: 'Manage the people who have access to this workspace.'
+})
 
 // Static placeholder data — swap for a real API-backed list later.
 const users = [
@@ -21,7 +24,7 @@ const statusColor: Record<string, string> = {
 
 <template>
   <div>
-    <AppPageHeader description="Manage the people who have access to this workspace.">
+    <AppPageHeader>
       <v-btn
         color="primary"
         prepend-icon="mdi-plus"

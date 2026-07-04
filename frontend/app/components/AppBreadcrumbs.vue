@@ -20,6 +20,13 @@ const crumbs = computed<Crumb[]>(() => {
 // Parent trail (everything above the current page) shown as a small linked row.
 const trail = computed(() => crumbs.value.slice(0, -1))
 const current = computed(() => crumbs.value.at(-1)?.title ?? '')
+
+// Icon for the current page, taken from the shared nav config (matched by path)
+// so it stays in sync with the sidebar without duplicating it per page.
+const currentIcon = computed(() => navItems.find(item => item.to === route.path)?.icon)
+
+// Optional subtitle, shown under the title (set via `definePageMeta`).
+const subtitle = computed(() => route.meta.subtitle)
 </script>
 
 <template>
@@ -36,8 +43,19 @@ const current = computed(() => crumbs.value.at(-1)?.title ?? '')
         />
       </template>
     </v-breadcrumbs>
-    <h1 class="text-headline-small font-weight-bold my-0">
+    <h1 class="d-flex align-center ga-2 text-title-large font-weight-bold text-primary my-0">
+      <v-icon
+        v-if="currentIcon"
+        :icon="currentIcon"
+        size="small"
+      />
       {{ current }}
     </h1>
+    <p
+      v-if="subtitle"
+      class="text-body-small text-medium-emphasis my-0"
+    >
+      {{ subtitle }}
+    </p>
   </div>
 </template>

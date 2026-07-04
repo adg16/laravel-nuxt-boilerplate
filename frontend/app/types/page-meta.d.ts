@@ -6,6 +6,8 @@ declare module '#app' {
     // ordered array of { title, to } for multi-level pages. The last crumb is
     // rendered as the page heading (not a link) by <AppBreadcrumbs>.
     breadcrumb?: string | { title: string, to?: string }[]
+    // Optional subtitle shown under the page title in <AppBreadcrumbs>.
+    subtitle?: string
   }
 }
 

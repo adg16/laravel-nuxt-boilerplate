@@ -1,5 +1,8 @@
 <script setup lang="ts">
-definePageMeta({ breadcrumb: 'Roles' })
+definePageMeta({
+  breadcrumb: 'Roles',
+  subtitle: 'Define what each group of users is allowed to do.'
+})
 
 // Static placeholder data — swap for a real API-backed list later.
 const roles = [
@@ -12,7 +15,7 @@ const roles = [
 
 <template>
   <div>
-    <AppPageHeader description="Define what each group of users is allowed to do.">
+    <AppPageHeader>
       <v-btn
         color="primary"
         prepend-icon="mdi-plus"

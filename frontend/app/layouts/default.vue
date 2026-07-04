@@ -1,16 +1,8 @@
 <script setup lang="ts">
 import { useTheme, useDisplay } from 'vuetify'
 
-// Left-nav items. Add app pages here — `to` is a Nuxt route, `icon` an MDI
-// glyph. This is the single source for the sidebar menu.
-type NavItem = { title: string, icon: string, to: string }
-
-const navItems: NavItem[] = [
-  { title: 'Dashboard', icon: 'mdi-view-dashboard-outline', to: '/' },
-  { title: 'Users', icon: 'mdi-account-group-outline', to: '/users' },
-  { title: 'Roles', icon: 'mdi-shield-account-outline', to: '/roles' }
-]
-
+// `navItems` (the sidebar menu) is the single source in `app/utils/nav.ts`,
+// shared with <AppBreadcrumbs> — auto-imported here.
 const auth = useAuthStore()
 const router = useRouter()
 const theme = useTheme()
@@ -72,39 +64,73 @@ async function handleLogout() {
 
 <template>
   <div>
-    <!-- App bar is declared before the drawer so it claims the full width at the
-         top; the drawer then sits below it. This keeps the brand (logo + name +
-         tagline) always visible, independent of the drawer's collapse. -->
-    <v-app-bar
-      flat
-      border="b"
+    <v-navigation-drawer
+      v-model="drawer"
+      :permanent="!isMobile"
+      :rail="!isMobile"
+      :expand-on-hover="!isMobile"
+      :width="360"
+      elevation="2"
     >
+      <v-list
+        nav
+        class="py-0"
+      >
+        <v-list-item class="brand-header">
+          <template #prepend>
+            <v-avatar
+              rounded="lg"
+              class="brand-logo"
+            >
+              <v-img
+                src="/favicon.svg"
+                alt=""
+              />
+            </v-avatar>
+          </template>
+          <template #title>
+            <div class="d-flex flex-column">
+              <span class="text-title-medium font-weight-bold">{{ appName }}</span>
+              <!-- Tagline stacks under the name; hidden in the collapsed rail,
+                   revealed when the drawer expands (see the rail rule in <style>). -->
+              <span class="brand-tagline text-body-small text-medium-emphasis">
+                {{ appTagline }}
+              </span>
+            </div>
+          </template>
+        </v-list-item>
+      </v-list>
+
+      <v-list
+        nav
+        density="comfortable"
+      >
+        <v-list-item
+          v-for="item in navItems"
+          :key="item.to"
+          :to="item.to"
+          :prepend-icon="item.icon"
+          :title="item.title"
+          color="primary"
+          rounded="lg"
+        />
+      </v-list>
+    </v-navigation-drawer>
+
+    <v-app-bar flat>
       <template #prepend>
         <v-app-bar-nav-icon
           v-if="isMobile"
           aria-label="Toggle menu"
           @click="drawer = !drawer"
         />
-        <NuxtLink
-          to="/"
-          class="d-flex align-center ga-3 text-decoration-none text-high-emphasis"
-        >
-          <v-avatar
-            rounded="lg"
-            size="36"
-          >
-            <v-img
-              src="/favicon.svg"
-              alt=""
-            />
-          </v-avatar>
-          <div class="d-flex flex-column">
-            <span class="brand-name text-title-medium font-weight-bold">{{ appName }}</span>
-            <span class="brand-tagline text-body-small text-medium-emphasis d-none d-sm-block">
-              {{ appTagline }}
-            </span>
-          </div>
-        </NuxtLink>
+        <!-- Desktop: page title/breadcrumb left-aligned in the bar (in `prepend`
+             so it hugs the left edge rather than centering in the empty title
+             area). On mobile it moves below the app bar — see <v-main>. -->
+        <AppBreadcrumbs
+          v-if="!isMobile"
+          class="ms-5"
+        />
       </template>
 
       <template #append>
@@ -172,38 +198,20 @@ async function handleLogout() {
       </template>
     </v-app-bar>
 
-    <v-navigation-drawer
-      v-model="drawer"
-      :permanent="!isMobile"
-      :rail="!isMobile"
-      :expand-on-hover="!isMobile"
-      elevation="2"
-    >
-      <v-list
-        nav
-        density="comfortable"
-      >
-        <v-list-item
-          v-for="item in navItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="item.title"
-          color="primary"
-          rounded="lg"
-        />
-      </v-list>
-    </v-navigation-drawer>
-
     <v-main>
-      <!-- The layout owns the content shell: consistent page padding plus the
-           breadcrumb/title header (driven by each page's `breadcrumb` meta), so
-           pages only render their body. -->
+      <!-- The layout owns the content shell: consistent page padding (the
+           breadcrumb/page title lives in the app bar), so pages only render
+           their body. -->
       <v-container
         fluid
         class="pa-4 pa-md-6"
       >
-        <AppBreadcrumbs class="mb-6" />
+        <!-- Mobile: breadcrumb sits below the app bar (below the burger menu);
+             on desktop it lives in the app bar instead. -->
+        <AppBreadcrumbs
+          v-if="isMobile"
+          class="mb-4"
+        />
         <slot />
       </v-container>
     </v-main>
@@ -211,9 +219,41 @@ async function handleLogout() {
 </template>
 
 <style scoped>
-/* Tighten the two brand lines so the name + tagline fit the app bar's height. */
-.brand-name,
+/* Match the app bar's 64px height so the drawer's header divider lines up with
+   the app bar's bottom border. `--v-list-prepend-gap` tightens the space between
+   the logo and the app name (Vuetify defaults it to 16px for avatars). */
+.brand-header {
+  min-height: 64px;
+  --v-list-prepend-gap: 8px;
+}
+
+/* Keep the logo a constant 36px in both the collapsed rail and the expanded
+   drawer. We size it via the avatar's CSS variable (not the `size` prop, whose
+   inline width/height would be overridden by Vuetify's rail rule); scoped styles
+   are unlayered and therefore win over that layered rail rule.
+
+   The 36px logo and the 24px nav icons share the same left edge, so the larger
+   logo's centre sits (36 − 24) / 2 = 6px further right. Nudge it back 6px in
+   both states so its centre stays on the nav-icon column and its left margin is
+   identical whether the drawer is collapsed or expanded. */
+.brand-logo {
+  --v-avatar-height: 36px;
+  transform: translateX(-6px);
+}
+
+/* Keep the tagline on a single line so it never reflows while the drawer's width
+   animates open (multi-line reflow would change the content height and re-centre
+   the logo/name — the flicker). The drawer is widened enough to fit it. */
 .brand-tagline {
+  white-space: nowrap;
   line-height: 1.25;
+  transition: opacity 0.2s ease;
+}
+
+/* Hide the tagline in the collapsed rail with opacity (not display) so its line
+   stays reserved — the content height is constant, so nothing shifts vertically
+   when the drawer expands; the tagline just fades in as it opens. */
+.v-navigation-drawer--rail:not(.v-navigation-drawer--is-hovering) .brand-tagline {
+  opacity: 0;
 }
 </style>
