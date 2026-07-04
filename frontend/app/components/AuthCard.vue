@@ -10,10 +10,10 @@ defineProps<{
 <template>
   <v-card class="pa-6 pa-sm-8">
     <div class="mb-6">
-      <h1 class="text-h5 font-weight-bold">
+      <div class="text-title-large font-weight-bold">
         {{ title }}
-      </h1>
-      <p class="text-body-2 text-medium-emphasis mt-1">
+      </div>
+      <p class="text-body-medium text-medium-emphasis mt-1">
         {{ subtitle }}
       </p>
     </div>

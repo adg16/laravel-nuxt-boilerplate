@@ -26,14 +26,14 @@ const { appName } = useRuntimeConfig().public
             size="24"
           />
         </v-avatar>
-        <span class="mt-3 text-h6 font-weight-bold">
+        <span class="mt-3 text-title-large font-weight-bold">
           {{ appName }}
         </span>
       </div>
 
       <slot />
 
-      <p class="mt-8 text-center text-caption text-medium-emphasis">
+      <p class="mt-8 text-center text-body-small text-medium-emphasis">
         &copy; {{ new Date().getFullYear() }} {{ appName }}. All rights reserved.
       </p>
     </div>

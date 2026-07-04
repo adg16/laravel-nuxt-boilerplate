@@ -30,7 +30,7 @@ async function onSubmit() {
 
 <template>
   <AuthCard
-    title="Welcome back"
+    title="Sign in"
     subtitle="Sign in to your account to continue."
   >
     <v-form
@@ -61,7 +61,7 @@ async function onSubmit() {
         <div class="d-flex justify-end mt-1">
           <NuxtLink
             to="/forgot-password"
-            class="text-caption text-primary text-decoration-none font-weight-medium"
+            class="text-body-small text-primary text-decoration-none font-weight-medium"
           >
             Forgot password?
           </NuxtLink>

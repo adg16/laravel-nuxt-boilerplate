@@ -87,7 +87,7 @@ async function onSubmit() {
 
       <NuxtLink
         to="/login"
-        class="text-center text-body-2 text-medium-emphasis text-decoration-none"
+        class="text-center text-body-medium text-medium-emphasis text-decoration-none"
       >
         Back to sign in
       </NuxtLink>
