@@ -30,7 +30,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Match the pinned node:24-alpine dev image so npm resolves the lock
+          # file identically in CI and in the container that generates it.
+          node-version: 24
       - run: npm ci
       - run: npm run lint
       - run: npm run typecheck
