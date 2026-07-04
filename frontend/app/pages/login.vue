@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { FormSubmitEvent } from '@nuxt/ui'
+import type { VForm } from 'vuetify/components'
 
 definePageMeta({ layout: 'auth' })
 
@@ -8,89 +8,83 @@ const auth = useAuthStore()
 const router = useRouter()
 const { loading, error, submit } = useSubmit()
 
-const schema = z.object({
-  email: z.string().email('Enter a valid email address.'),
-  password: z.string().min(1, 'Password is required.')
-})
-type Schema = z.output<typeof schema>
-
+const formRef = ref<VForm>()
 const state = reactive({
   email: '',
   password: ''
 })
 
-async function onSubmit(event: FormSubmitEvent<Schema>) {
+const emailRules = [zodRule(z.string().email('Enter a valid email address.'))]
+const passwordRules = [zodRule(z.string().min(1, 'Password is required.'))]
+
+async function onSubmit() {
+  const { valid } = await formRef.value!.validate()
+  if (!valid) return
+
   await submit(async () => {
-    await auth.login(event.data)
+    await auth.login(state)
     router.push('/')
   }, 'Invalid credentials.')
 }
 </script>
 
 <template>
-  <UPageCard
+  <AuthCard
     title="Welcome back"
-    description="Sign in to your account to continue."
+    subtitle="Sign in to your account to continue."
   >
-    <UForm
-      :schema="schema"
-      :state="state"
-      class="flex flex-col gap-4"
-      @submit="onSubmit"
+    <v-form
+      ref="formRef"
+      validate-on="submit"
+      class="d-flex flex-column ga-4"
+      @submit.prevent="onSubmit"
     >
-      <UFormField
+      <v-text-field
+        v-model="state.email"
+        type="email"
         label="Email"
-        name="email"
-      >
-        <UInput
-          v-model="state.email"
-          type="email"
-          autocomplete="email"
-          placeholder="you@example.com"
-          icon="i-lucide-mail"
-          size="lg"
-          class="w-full"
-        />
-      </UFormField>
-
-      <UFormField
-        label="Password"
-        name="password"
-      >
-        <template #hint>
-          <ULink
-            to="/forgot-password"
-            class="text-xs font-medium text-primary hover:text-primary/80"
-          >
-            Forgot password?
-          </ULink>
-        </template>
-        <PasswordInput
-          v-model="state.password"
-          autocomplete="current-password"
-          placeholder="••••••••"
-          icon="i-lucide-lock"
-          size="lg"
-          class="w-full"
-        />
-      </UFormField>
-
-      <UAlert
-        v-if="error"
-        color="error"
-        variant="subtle"
-        icon="i-lucide-circle-alert"
-        :title="error"
+        autocomplete="email"
+        placeholder="you@example.com"
+        prepend-inner-icon="mdi-email-outline"
+        :rules="emailRules"
       />
 
-      <UButton
+      <div>
+        <PasswordInput
+          v-model="state.password"
+          label="Password"
+          autocomplete="current-password"
+          placeholder="••••••••"
+          prepend-inner-icon="mdi-lock-outline"
+          :rules="passwordRules"
+        />
+        <div class="d-flex justify-end mt-1">
+          <NuxtLink
+            to="/forgot-password"
+            class="text-caption text-primary text-decoration-none font-weight-medium"
+          >
+            Forgot password?
+          </NuxtLink>
+        </div>
+      </div>
+
+      <v-alert
+        v-if="error"
+        type="error"
+        variant="tonal"
+        density="comfortable"
+        :text="error"
+      />
+
+      <v-btn
         type="submit"
-        size="lg"
+        color="primary"
+        size="large"
         block
         :loading="loading"
       >
         Sign in
-      </UButton>
-    </UForm>
-  </UPageCard>
+      </v-btn>
+    </v-form>
+  </AuthCard>
 </template>

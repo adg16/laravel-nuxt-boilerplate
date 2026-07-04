@@ -1,143 +1,124 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { FormSubmitEvent } from '@nuxt/ui'
+import type { VForm } from 'vuetify/components'
 
 definePageMeta({ layout: 'auth' })
 
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
-const toast = useToast()
+const { notify } = useSnackbar()
 const { loading, error, submit } = useSubmit()
 
 const token = String(route.query.token ?? '')
 const email = String(route.query.email ?? '')
 const hasValidLink = computed(() => token !== '' && email !== '')
 
-// Mirror the backend's Password::defaults() (min 8) so validation fails fast
-// client-side instead of after a round-trip.
-const schema = z.object({
-  password: z.string().min(8, 'Password must be at least 8 characters.'),
-  password_confirmation: z.string()
-}).refine(data => data.password === data.password_confirmation, {
-  message: 'Passwords do not match.',
-  path: ['password_confirmation']
-})
-type Schema = z.output<typeof schema>
-
+const formRef = ref<VForm>()
 const state = reactive({
   password: '',
   password_confirmation: ''
 })
 
-async function onSubmit(event: FormSubmitEvent<Schema>) {
+// Mirror the backend's Password::defaults() (min 8) so validation fails fast
+// client-side instead of after a round-trip.
+const passwordRules = [zodRule(z.string().min(8, 'Password must be at least 8 characters.'))]
+const confirmationRules = [
+  (v: string) => v === state.password || 'Passwords do not match.'
+]
+
+async function onSubmit() {
+  const { valid } = await formRef.value!.validate()
+  if (!valid) return
+
   await submit(async () => {
     await auth.resetPassword({
       token,
       email,
-      password: event.data.password,
-      password_confirmation: event.data.password_confirmation
+      password: state.password,
+      password_confirmation: state.password_confirmation
     })
-    toast.add({
-      title: 'Password reset',
-      description: 'Your password has been updated. Please sign in.',
-      color: 'success',
-      icon: 'i-lucide-circle-check'
-    })
+    notify('Your password has been updated. Please sign in.', 'success')
     router.push('/login')
   }, 'This reset link is invalid or has expired.')
 }
 </script>
 
 <template>
-  <UPageCard
+  <AuthCard
     title="Reset your password"
-    description="Choose a new password for your account."
+    subtitle="Choose a new password for your account."
   >
     <div
       v-if="!hasValidLink"
-      class="flex flex-col gap-4"
+      class="d-flex flex-column ga-4"
     >
-      <UAlert
-        color="error"
-        variant="subtle"
-        icon="i-lucide-circle-alert"
+      <v-alert
+        type="error"
+        variant="tonal"
         title="Invalid reset link"
-        description="This link is missing information. Please request a new one."
+        text="This link is missing information. Please request a new one."
       />
-      <UButton
+      <v-btn
         to="/forgot-password"
-        variant="ghost"
-        color="neutral"
-        icon="i-lucide-arrow-left"
+        variant="text"
+        prepend-icon="mdi-arrow-left"
         block
       >
         Request a new link
-      </UButton>
+      </v-btn>
     </div>
 
-    <UForm
+    <v-form
       v-else
-      :schema="schema"
-      :state="state"
-      class="flex flex-col gap-4"
-      @submit="onSubmit"
+      ref="formRef"
+      validate-on="submit"
+      class="d-flex flex-column ga-4"
+      @submit.prevent="onSubmit"
     >
-      <UFormField label="Email">
-        <UInput
-          :model-value="email"
-          type="email"
-          icon="i-lucide-mail"
-          size="lg"
-          class="w-full"
-          disabled
-        />
-      </UFormField>
-
-      <UFormField
-        label="New password"
-        name="password"
-      >
-        <PasswordInput
-          v-model="state.password"
-          autocomplete="new-password"
-          placeholder="••••••••"
-          icon="i-lucide-lock"
-          size="lg"
-          class="w-full"
-        />
-      </UFormField>
-
-      <UFormField
-        label="Confirm password"
-        name="password_confirmation"
-      >
-        <PasswordInput
-          v-model="state.password_confirmation"
-          autocomplete="new-password"
-          placeholder="••••••••"
-          icon="i-lucide-lock"
-          size="lg"
-          class="w-full"
-        />
-      </UFormField>
-
-      <UAlert
-        v-if="error"
-        color="error"
-        variant="subtle"
-        icon="i-lucide-circle-alert"
-        :title="error"
+      <v-text-field
+        :model-value="email"
+        type="email"
+        label="Email"
+        prepend-inner-icon="mdi-email-outline"
+        disabled
       />
 
-      <UButton
+      <PasswordInput
+        v-model="state.password"
+        label="New password"
+        autocomplete="new-password"
+        placeholder="••••••••"
+        prepend-inner-icon="mdi-lock-outline"
+        :rules="passwordRules"
+      />
+
+      <PasswordInput
+        v-model="state.password_confirmation"
+        label="Confirm password"
+        autocomplete="new-password"
+        placeholder="••••••••"
+        prepend-inner-icon="mdi-lock-outline"
+        :rules="confirmationRules"
+      />
+
+      <v-alert
+        v-if="error"
+        type="error"
+        variant="tonal"
+        density="comfortable"
+        :text="error"
+      />
+
+      <v-btn
         type="submit"
-        size="lg"
+        color="primary"
+        size="large"
         block
         :loading="loading"
       >
         Reset password
-      </UButton>
-    </UForm>
-  </UPageCard>
+      </v-btn>
+    </v-form>
+  </AuthCard>
 </template>

@@ -3,10 +3,10 @@ const auth = useAuthStore()
 </script>
 
 <template>
-  <UContainer class="py-12">
-    <UPageCard
+  <v-container class="py-12">
+    <v-card
       title="Welcome"
-      :description="`Signed in as ${auth.user?.email ?? ''}`"
+      :subtitle="`Signed in as ${auth.user?.email ?? ''}`"
     />
-  </UContainer>
+  </v-container>
 </template>

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { z } from 'zod'
-import type { FormSubmitEvent } from '@nuxt/ui'
+import type { VForm } from 'vuetify/components'
 
 definePageMeta({ layout: 'auth' })
 
@@ -8,93 +8,89 @@ const auth = useAuthStore()
 const { loading, error, submit } = useSubmit()
 const sentMessage = ref('')
 
-const schema = z.object({
-  email: z.string().email('Enter a valid email address.')
-})
-type Schema = z.output<typeof schema>
-
+const formRef = ref<VForm>()
 const state = reactive({
   email: ''
 })
 
-async function onSubmit(event: FormSubmitEvent<Schema>) {
+const emailRules = [zodRule(z.string().email('Enter a valid email address.'))]
+
+async function onSubmit() {
+  const { valid } = await formRef.value!.validate()
+  if (!valid) return
+
   await submit(async () => {
-    sentMessage.value = await auth.forgotPassword(event.data.email)
+    sentMessage.value = await auth.forgotPassword(state.email)
   })
 }
 </script>
 
 <template>
-  <UPageCard
+  <AuthCard
     title="Forgot your password?"
-    description="Enter your email and we'll send you a link to reset it."
+    subtitle="Enter your email and we'll send you a link to reset it."
   >
     <div
       v-if="sentMessage"
-      class="flex flex-col gap-4"
+      class="d-flex flex-column ga-4"
     >
-      <UAlert
-        color="success"
-        variant="subtle"
-        icon="i-lucide-mail-check"
-        :description="sentMessage"
+      <v-alert
+        type="success"
+        variant="tonal"
+        icon="mdi-email-check-outline"
+        :text="sentMessage"
       />
-      <UButton
+      <v-btn
         to="/login"
-        variant="ghost"
-        color="neutral"
-        icon="i-lucide-arrow-left"
+        variant="text"
+        prepend-icon="mdi-arrow-left"
         block
       >
         Back to sign in
-      </UButton>
+      </v-btn>
     </div>
 
-    <UForm
+    <v-form
       v-else
-      :schema="schema"
-      :state="state"
-      class="flex flex-col gap-4"
-      @submit="onSubmit"
+      ref="formRef"
+      validate-on="submit"
+      class="d-flex flex-column ga-4"
+      @submit.prevent="onSubmit"
     >
-      <UFormField
+      <v-text-field
+        v-model="state.email"
+        type="email"
         label="Email"
-        name="email"
-      >
-        <UInput
-          v-model="state.email"
-          type="email"
-          autocomplete="email"
-          placeholder="you@example.com"
-          icon="i-lucide-mail"
-          size="lg"
-          class="w-full"
-        />
-      </UFormField>
-
-      <UAlert
-        v-if="error"
-        color="error"
-        variant="subtle"
-        icon="i-lucide-circle-alert"
-        :title="error"
+        autocomplete="email"
+        placeholder="you@example.com"
+        prepend-inner-icon="mdi-email-outline"
+        :rules="emailRules"
       />
 
-      <UButton
+      <v-alert
+        v-if="error"
+        type="error"
+        variant="tonal"
+        density="comfortable"
+        :text="error"
+      />
+
+      <v-btn
         type="submit"
-        size="lg"
+        color="primary"
+        size="large"
         block
         :loading="loading"
       >
         Send reset link
-      </UButton>
+      </v-btn>
 
-      <ULink
+      <NuxtLink
         to="/login"
-        class="text-center text-sm text-muted hover:text-default"
+        class="text-center text-body-2 text-medium-emphasis text-decoration-none"
       >
         Back to sign in
-      </ULink>
-    </UForm>
-  </UPageCard>
+      </NuxtLink>
+    </v-form>
+  </AuthCard>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// A UInput for passwords with a show/hide toggle. Forwards all attrs
-// (placeholder, autocomplete, name, size, icon, required, class, ...) to the
-// underlying UInput, so it's a drop-in replacement for `<UInput type="password">`.
+// A v-text-field for passwords with a show/hide toggle. Forwards all attrs
+// (placeholder, autocomplete, name, prepend-inner-icon, density, ...) to the
+// underlying v-text-field, so it's a drop-in replacement for a password field.
 const model = defineModel<string>()
 const show = ref(false)
 
@@ -11,22 +11,21 @@ function toggle() {
 </script>
 
 <template>
-  <UInput
+  <v-text-field
     v-model="model"
     :type="show ? 'text' : 'password'"
-    :ui="{ trailing: 'pe-1' }"
   >
-    <template #trailing>
-      <UButton
+    <template #append-inner>
+      <v-btn
         type="button"
-        color="neutral"
-        variant="link"
-        size="sm"
-        :icon="show ? 'i-lucide-eye-off' : 'i-lucide-eye'"
+        variant="text"
+        size="small"
+        density="comfortable"
+        :icon="show ? 'mdi-eye-off' : 'mdi-eye'"
         :aria-label="show ? 'Hide password' : 'Show password'"
         :aria-pressed="show"
         @click="toggle"
       />
     </template>
-  </UInput>
+  </v-text-field>
 </template>

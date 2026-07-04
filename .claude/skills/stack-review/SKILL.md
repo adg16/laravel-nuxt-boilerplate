@@ -1,11 +1,11 @@
 ---
 name: stack-review
-description: Full review of the LOCAL changes in this Laravel + Nuxt boilerplate. Covers everything the native /code-review checks (correctness bugs, removed-behavior, cross-file breakage, simplification, efficiency, altitude, CLAUDE.md conventions) PLUS regression/blast-radius risk to existing features and stack-specific best practices — DRY/reuse, security, performance, exception handling & logging, and idiomatic Laravel, Nuxt/Vue, and Nuxt UI style (coding style included). Use when the user asks to "review my changes", "best practices review", "quality review", "check DRY/security/performance", "is this idiomatic", or names any of these stacks for review. Trigger on "stack review", "best-practice review", "review for security/performance".
+description: Full review of the LOCAL changes in this Laravel + Nuxt boilerplate. Covers everything the native /code-review checks (correctness bugs, removed-behavior, cross-file breakage, simplification, efficiency, altitude, CLAUDE.md conventions) PLUS regression/blast-radius risk to existing features and stack-specific best practices — DRY/reuse, security, performance, exception handling & logging, and idiomatic Laravel, Nuxt/Vue, and Vuetify style (coding style included). Use when the user asks to "review my changes", "best practices review", "quality review", "check DRY/security/performance", "is this idiomatic", or names any of these stacks for review. Trigger on "stack review", "best-practice review", "review for security/performance".
 ---
 
 # Stack Review
 
-A single-pass review of the **uncommitted local changes** in this repo that combines two things: the correctness-and-cleanup angles of the native `/code-review`, **and** a best-practices/hardening pass tuned to **this** stack — Laravel 13 / PHP 8.5 API + Nuxt 4 SPA (`ssr: false`) + Sanctum + Pinia + Nuxt UI. It answers both "is this correct?" and "is this idiomatic, DRY, secure, fast, and well-styled?"
+A single-pass review of the **uncommitted local changes** in this repo that combines two things: the correctness-and-cleanup angles of the native `/code-review`, **and** a best-practices/hardening pass tuned to **this** stack — Laravel 13 / PHP 8.5 API + Nuxt 4 SPA (`ssr: false`) + Sanctum + Pinia + Vuetify 4. It answers both "is this correct?" and "is this idiomatic, DRY, secure, fast, and well-styled?"
 
 This is the inline, one-sitting version. For a heavier recall pass on a big or risky diff, `/code-review high` (or `ultra`) runs the same correctness angles across multiple agents with a verify vote — mention that option if the change is large.
 
@@ -57,7 +57,7 @@ The first four dimensions are the native `/code-review` angles — run them firs
 **Error handling & logging**
 - Backend exceptions: no silently swallowed or empty `catch`; no over-broad `catch (\Throwable)` that hides real bugs; catch only what you can handle, otherwise let it bubble to Laravel's handler (`bootstrap/app.php` `withExceptions`, which renders JSON for `api/*`). Prefer typed/domain exceptions and the framework ones already used here (`ValidationException`, `AuthenticationException`) over ad-hoc `response()->json([...], 4xx)`. Operations that can fail externally (mail send, queue job, HTTP call) have a defined failure path, not an unhandled 500.
 - Backend logging: use the `Log` facade with structured context (`Log::warning($msg, [...])`), appropriate level (debug/info/warning/error), and a trace for swallowed-but-expected failures so they're diagnosable. **Never log secrets, passwords, raw tokens, or PII** (reset tokens, `X-XSRF-TOKEN`, credentials). Don't log-and-rethrow the same error (double logging). Don't leak stack traces/internal messages to clients — rely on `APP_DEBUG=false` in prod.
-- Frontend: every `await` that can throw (`$fetch`/store actions) is inside `try/catch`; the error is surfaced to the user (`UAlert`/`useToast`) rather than swallowed; `loading`/pending state is reset in `finally`; caught errors are narrowed before property access (e.g. `const err = e as { data?: { message?: string } }`) and fall back to a generic message. No leftover `console.log`/`console.error` as the only handling; distinguish expected statuses (401/422) from unexpected ones.
+- Frontend: every `await` that can throw (`$fetch`/store actions) is inside `try/catch`; the error is surfaced to the user (`v-alert`/`useSnackbar`) rather than swallowed; `loading`/pending state is reset in `finally`; caught errors are narrowed before property access (e.g. `const err = e as { data?: { message?: string } }`) and fall back to a generic message. No leftover `console.log`/`console.error` as the only handling; distinguish expected statuses (401/422) from unexpected ones.
 
 **Performance** (also covers native /code-review's *efficiency* angle)
 - Wasted work the diff introduces: redundant computation or repeated I/O, independent async operations awaited sequentially that could run together, blocking work added to a hot path or startup. Also flag long-lived objects/closures that capture a large enclosing scope and keep it alive.
@@ -78,11 +78,12 @@ The first four dimensions are the native `/code-review` angles — run them firs
 - SPA reality (`ssr: false`): client-only guards where needed; no SSR-only assumptions.
 - Typed props/emits/models; no `any` leaking; explicit return types on exported composables.
 
-**Nuxt UI best practices**
-- Prefer `U*` components and their props over hand-rolled markup/CSS: `UForm` + `UFormField` with a validation schema for real forms (not bare `<form>` + manual refs when validation matters); `UButton`/`UInput`/`UAlert` props over custom classes.
-- Theming through `app.config.ts` (`ui.colors`) and semantic color/design tokens (`text-muted`, `bg-primary`, `text-highlighted`) rather than raw Tailwind palette values.
-- Component-level overrides via the `:ui` prop, not deep `::v-deep` CSS.
-- Accessibility: every input has a label/`UFormField`; icon-only buttons have `aria-label`; interactive controls are keyboard-reachable.
+**Vuetify best practices**
+- Prefer `v-*` components and their props over hand-rolled markup/CSS: `v-form` + `v-text-field` with `:rules` for real forms (not bare `<form>` + manual refs when validation matters — validate via a `VForm` ref's `validate()` on submit); `v-btn`/`v-text-field`/`v-alert` props over custom classes. Field rules go through the shared `zodRule` helper so validation messages stay single-sourced with Zod.
+- Theming through the `createVuetify` config in `app/plugins/vuetify.ts` (`theme.themes.<name>.colors`) and Vuetify design tokens (`color="primary"`, `text-medium-emphasis`, `rgb(var(--v-theme-primary))`) rather than hard-coded hex/color values in components.
+- Component-level styling via component props/variants and Vuetify utility classes (`d-flex`, `ga-4`, `text-caption`), reserving scoped CSS for what the utilities can't express; avoid deep `::v-deep` overrides of Vuetify internals.
+- Global feedback (toasts) via the single `<AppSnackbar>` + `useSnackbar().notify`, not ad-hoc `v-snackbar` per page.
+- Accessibility: every input has a `label`; icon-only buttons have `aria-label`; interactive controls are keyboard-reachable.
 
 ### 4. Verify before reporting
 
@@ -94,6 +95,14 @@ Apply the native `/code-review` verify discipline so the report stays high-signa
 
 ### 5. Report
 
-Group findings by dimension in this order — **Correctness, Regression risk, Simplification, Altitude, Conventions, DRY/reuse, Security, Error handling & logging, Performance, Laravel, Nuxt/Vue, Nuxt UI** — most severe first within each. For each: `file:line`, the problem, why it matters here, and the concrete fix. Mark severity **High** (correctness/security/perf regression, real duplication) / **Medium** (idiom or maintainability) / **Low** (style nit the linter missed). A correctness or security bug outranks any style/idiom finding when you summarize. If a dimension is clean, say so in one line rather than padding.
+Group findings by **severity**, most severe first — **Critical, High, Medium, Low** — and within each severity list the most impactful finding first. Do **not** group by dimension; the dimension is just a tag on each finding. For each finding give: the severity, the dimension it came from (e.g. `Correctness`, `Security`, `DRY/reuse`, `Vuetify`), `file:line`, the problem, why it matters for this stack, and the concrete fix (name the exact helper/component/pattern).
+
+Severity scale:
+- **Critical** — a shipped correctness/security defect that will bite in normal use: data loss/corruption, auth bypass or secret/PII leak, a guaranteed crash on a common path, a broken migration.
+- **High** — a correctness/security/perf regression on a realistic-but-not-guaranteed path, or real (not stylistic) duplication that will cause divergence bugs.
+- **Medium** — maintainability or idiom problems, blast-radius risks, or missing test coverage for a reachable break.
+- **Low** — style nits the linter missed and cosmetic idiom preferences with no observable effect.
+
+A correctness or security finding outranks any style/idiom finding at the same severity when you order within a bucket. If a severity bucket is empty, omit it. If the whole review is clean, say so in one line rather than padding.
 
 End with a one-line verdict and offer to apply the fixes.

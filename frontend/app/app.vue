@@ -13,9 +13,10 @@ useHead({
 </script>
 
 <template>
-  <UApp>
+  <v-app>
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
-  </UApp>
+    <AppSnackbar />
+  </v-app>
 </template>

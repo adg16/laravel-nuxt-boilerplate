@@ -1,6 +1,16 @@
 <script setup lang="ts">
+import { useTheme } from 'vuetify'
+
 const auth = useAuthStore()
 const router = useRouter()
+const theme = useTheme()
+const { appName } = useRuntimeConfig().public
+
+const isDark = computed(() => theme.global.current.value.dark)
+
+function toggleTheme() {
+  theme.global.name.value = isDark.value ? 'light' : 'dark'
+}
 
 async function handleLogout() {
   await auth.logout()
@@ -9,33 +19,40 @@ async function handleLogout() {
 </script>
 
 <template>
-  <div class="min-h-screen flex flex-col">
-    <UHeader>
-      <template #left>
+  <div>
+    <v-app-bar
+      flat
+      border="b"
+    >
+      <v-app-bar-title>
         <NuxtLink
           to="/"
-          class="font-semibold"
+          class="text-decoration-none text-high-emphasis font-weight-bold"
         >
-          App
+          {{ appName }}
         </NuxtLink>
-      </template>
+      </v-app-bar-title>
 
-      <template #right>
-        <UColorModeButton />
-        <UButton
+      <template #append>
+        <v-btn
+          :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
+          :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+          variant="text"
+          @click="toggleTheme"
+        />
+        <v-btn
           v-if="auth.user"
-          color="neutral"
-          variant="ghost"
-          icon="i-lucide-log-out"
+          prepend-icon="mdi-logout"
+          variant="text"
           @click="handleLogout"
         >
           Logout
-        </UButton>
+        </v-btn>
       </template>
-    </UHeader>
+    </v-app-bar>
 
-    <UMain class="flex-1">
+    <v-main>
       <slot />
-    </UMain>
+    </v-main>
   </div>
 </template>

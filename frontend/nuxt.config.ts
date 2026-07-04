@@ -1,6 +1,20 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
+import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
+
 export default defineNuxtConfig({
-  modules: ['@nuxt/eslint', '@nuxt/ui', '@pinia/nuxt'],
+  modules: [
+    '@nuxt/eslint',
+    '@pinia/nuxt',
+    // Vuetify ships its own Vite plugin for per-component style/treeshaking;
+    // register it via the vite:extendConfig hook (there's no first-party Nuxt
+    // module that reliably supports Vuetify 4 yet — this is the documented
+    // manual integration, paired with the plugin in app/plugins/vuetify.ts).
+    (_options, nuxt) => {
+      nuxt.hooks.hook('vite:extendConfig', (config) => {
+        config.plugins!.push(vuetify({ autoImport: true }))
+      })
+    }
+  ],
 
   // Internal backoffice SPA — no server-rendered HTML, nginx serves the
   // static build output directly in production (see docker/nginx).
@@ -10,17 +24,31 @@ export default defineNuxtConfig({
     enabled: true
   },
 
-  css: ['~/assets/css/main.css'],
-
   runtimeConfig: {
     public: {
       // Relative by default: nginx fronts both the API and this SPA on the
       // same origin, so no absolute URL/CORS setup is needed in dev or prod.
-      apiBase: '/api'
+      apiBase: '/api',
+      // Displayed app name; override with NUXT_PUBLIC_APP_NAME (baked in at
+      // build/generate time since this is a static SPA — no runtime server).
+      appName: 'My App'
     }
   },
 
+  // Vuetify ships untranspiled ESM; Nuxt needs it in the transpile list.
+  build: {
+    transpile: ['vuetify']
+  },
+
   compatibilityDate: '2026-06-30',
+
+  vite: {
+    vue: {
+      template: {
+        transformAssetUrls
+      }
+    }
+  },
 
   eslint: {
     config: {

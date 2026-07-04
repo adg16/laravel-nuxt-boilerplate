@@ -5,7 +5,7 @@ A reusable, dockerized starting point for internal/backoffice web apps: a Larave
 ## Stack
 
 - **Backend**: Laravel 13 (PHP 8.5), API-only — no Blade views
-- **Frontend**: Nuxt 4 (`ssr: false`), Tailwind CSS + Nuxt UI, Pinia
+- **Frontend**: Nuxt 4 (`ssr: false`), Vuetify 4 (Material Design), Pinia
 - **Auth**: Laravel Sanctum SPA (stateful cookie session + CSRF)
 - **Database**: MariaDB
 - **Cache / session / queue**: Redis (separate logical DBs each)
