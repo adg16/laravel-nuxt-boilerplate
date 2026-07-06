@@ -1,11 +1,11 @@
 <script setup lang="ts">
-definePageMeta({ breadcrumb: 'Dashboard' })
+definePageMeta({ breadcrumb: 'nav.dashboard' })
 
 const stats = [
-  { label: 'Total Users', value: '1,204', icon: 'mdi-account-group-outline', color: 'primary' },
-  { label: 'Sessions', value: '318', icon: 'mdi-pulse', color: 'info' },
-  { label: 'Revenue', value: '$12.4k', icon: 'mdi-currency-usd', color: 'success' },
-  { label: 'Open Tickets', value: '27', icon: 'mdi-ticket-outline', color: 'warning' }
+  { label: 'dashboard.stats.totalUsers', value: '1,204', icon: 'mdi-account-group-outline', color: 'primary' },
+  { label: 'dashboard.stats.sessions', value: '318', icon: 'mdi-pulse', color: 'info' },
+  { label: 'dashboard.stats.revenue', value: '$12.4k', icon: 'mdi-currency-usd', color: 'success' },
+  { label: 'dashboard.stats.openTickets', value: '27', icon: 'mdi-ticket-outline', color: 'warning' }
 ]
 
 const recent = [
@@ -54,7 +54,7 @@ const statusColor: Record<string, string> = {
                 {{ stat.value }}
               </div>
               <div class="text-body-small text-medium-emphasis">
-                {{ stat.label }}
+                {{ $t(stat.label) }}
               </div>
             </div>
           </div>
@@ -69,7 +69,7 @@ const statusColor: Record<string, string> = {
     >
       <v-card-item>
         <v-card-title class="text-title-large">
-          Recent Users
+          {{ $t('dashboard.recentUsers') }}
         </v-card-title>
       </v-card-item>
       <v-divider />
@@ -77,16 +77,16 @@ const statusColor: Record<string, string> = {
         <thead>
           <tr>
             <th class="text-left">
-              Name
+              {{ $t('table.name') }}
             </th>
             <th class="text-left">
-              Email
+              {{ $t('table.email') }}
             </th>
             <th class="text-left">
-              Role
+              {{ $t('table.role') }}
             </th>
             <th class="text-left">
-              Status
+              {{ $t('table.status') }}
             </th>
           </tr>
         </thead>
@@ -108,7 +108,7 @@ const statusColor: Record<string, string> = {
                 size="small"
                 variant="tonal"
               >
-                {{ row.status }}
+                {{ $t(`status.${row.status.toLowerCase()}`) }}
               </v-chip>
             </td>
           </tr>

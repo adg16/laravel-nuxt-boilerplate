@@ -7,6 +7,7 @@ definePageMeta({ layout: 'auth' })
 const auth = useAuthStore()
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 const { notify } = useSnackbar()
 const { loading, error, submit } = useSubmit()
 
@@ -22,9 +23,9 @@ const state = reactive({
 
 // Mirror the backend's Password::defaults() (min 8) so validation fails fast
 // client-side instead of after a round-trip.
-const passwordRules = [zodRule(z.string().min(8, 'Password must be at least 8 characters.'))]
+const passwordRules = [zodRule(z.string().min(8, t('validation.passwordMin')))]
 const confirmationRules = [
-  (v: string) => v === state.password || 'Passwords do not match.'
+  (v: string) => v === state.password || t('validation.passwordsNoMatch')
 ]
 
 async function onSubmit() {
@@ -38,16 +39,16 @@ async function onSubmit() {
       password: state.password,
       password_confirmation: state.password_confirmation
     })
-    notify('Your password has been updated. Please sign in.', 'success')
+    notify(t('auth.reset.success'), 'success')
     router.push('/login')
-  }, 'This reset link is invalid or has expired.')
+  }, t('auth.reset.expired'))
 }
 </script>
 
 <template>
   <AuthCard
-    title="Reset your password"
-    subtitle="Choose a new password for your account."
+    :title="$t('auth.reset.title')"
+    :subtitle="$t('auth.reset.subtitle')"
   >
     <div
       v-if="!hasValidLink"
@@ -56,8 +57,8 @@ async function onSubmit() {
       <v-alert
         type="error"
         variant="tonal"
-        title="Invalid reset link"
-        text="This link is missing information. Please request a new one."
+        :title="$t('auth.reset.invalidLinkTitle')"
+        :text="$t('auth.reset.invalidLinkText')"
       />
       <v-btn
         to="/forgot-password"
@@ -65,7 +66,7 @@ async function onSubmit() {
         prepend-icon="mdi-arrow-left"
         block
       >
-        Request a new link
+        {{ $t('auth.reset.requestNew') }}
       </v-btn>
     </div>
 
@@ -79,14 +80,14 @@ async function onSubmit() {
       <v-text-field
         :model-value="email"
         type="email"
-        label="Email"
+        :label="$t('fields.email')"
         prepend-inner-icon="mdi-email-outline"
         disabled
       />
 
       <PasswordInput
         v-model="state.password"
-        label="New password"
+        :label="$t('fields.newPassword')"
         autocomplete="new-password"
         placeholder="••••••••"
         prepend-inner-icon="mdi-lock-outline"
@@ -95,7 +96,7 @@ async function onSubmit() {
 
       <PasswordInput
         v-model="state.password_confirmation"
-        label="Confirm password"
+        :label="$t('fields.confirmPassword')"
         autocomplete="new-password"
         placeholder="••••••••"
         prepend-inner-icon="mdi-lock-outline"
@@ -117,7 +118,7 @@ async function onSubmit() {
         block
         :loading="loading"
       >
-        Reset password
+        {{ $t('auth.reset.submit') }}
       </v-btn>
     </v-form>
   </AuthCard>

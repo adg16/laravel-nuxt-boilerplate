@@ -110,7 +110,7 @@ async function handleLogout() {
           :key="item.to"
           :to="item.to"
           :prepend-icon="item.icon"
-          :title="item.title"
+          :title="$t(item.titleKey)"
           color="primary"
           rounded="lg"
         />
@@ -121,7 +121,7 @@ async function handleLogout() {
       <template #prepend>
         <v-app-bar-nav-icon
           v-if="isMobile"
-          aria-label="Toggle menu"
+          :aria-label="$t('a11y.toggleMenu')"
           @click="drawer = !drawer"
         />
         <!-- Mobile: brand logo sits right after the burger button (the desktop
@@ -148,17 +148,19 @@ async function handleLogout() {
       </template>
 
       <template #append>
+        <AppLanguageSwitcher />
+
         <v-btn
           v-if="canFullscreen"
           :icon="isFullscreen ? 'mdi-fullscreen-exit' : 'mdi-fullscreen'"
-          :aria-label="isFullscreen ? 'Exit full screen' : 'Enter full screen'"
+          :aria-label="isFullscreen ? $t('a11y.exitFullscreen') : $t('a11y.enterFullscreen')"
           variant="text"
           @click="toggleFullscreen"
         />
 
         <v-btn
           :icon="isDark ? 'mdi-weather-sunny' : 'mdi-weather-night'"
-          :aria-label="isDark ? 'Switch to light mode' : 'Switch to dark mode'"
+          :aria-label="isDark ? $t('a11y.switchToLight') : $t('a11y.switchToDark')"
           variant="text"
           @click="toggleTheme"
         />
@@ -171,7 +173,7 @@ async function handleLogout() {
             <v-btn
               v-bind="props"
               icon
-              aria-label="Account menu"
+              :aria-label="$t('a11y.accountMenu')"
             >
               <v-avatar
                 color="primary"
@@ -204,7 +206,7 @@ async function handleLogout() {
 
             <v-list-item
               prepend-icon="mdi-logout"
-              title="Logout"
+              :title="$t('common.logout')"
               @click="handleLogout"
             />
           </v-list>

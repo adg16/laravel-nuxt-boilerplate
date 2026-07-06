@@ -1,10 +1,13 @@
 export function useApi() {
   const config = useRuntimeConfig()
+  const { $i18n } = useNuxtApp()
 
   return $fetch.create({
     baseURL: config.public.apiBase,
     credentials: 'include',
     onRequest({ options }) {
+      options.headers = new Headers(options.headers)
+
       // Laravel's CSRF middleware expects the XSRF-TOKEN cookie echoed back as
       // this header — unlike axios, $fetch doesn't do this automatically.
       //
@@ -15,8 +18,14 @@ export function useApi() {
       // (typically logout) fail with a 419 CSRF mismatch.
       const token = readCookie('XSRF-TOKEN')
       if (token) {
-        options.headers = new Headers(options.headers)
         options.headers.set('X-XSRF-TOKEN', token)
+      }
+
+      // Advertise the active locale so the API can localize its responses
+      // (validation/auth messages) via the backend's SetLocale middleware.
+      const locale = $i18n?.locale?.value
+      if (locale) {
+        options.headers.set('Accept-Language', locale)
       }
     }
   })

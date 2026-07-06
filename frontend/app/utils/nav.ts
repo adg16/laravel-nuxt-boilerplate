@@ -1,10 +1,10 @@
-export type NavItem = { title: string, icon: string, to: string }
+export type NavItem = { titleKey: string, icon: string, to: string }
 
-// Single source for the sidebar menu — also used to pick the current page's icon
-// for the app-bar breadcrumb. Add app pages here: `to` is a Nuxt route, `icon`
-// an MDI glyph.
+// Single source for the sidebar menu. `titleKey` is an i18n message key (see
+// `i18n/locales/*.json`), resolved with `$t` where the menu is rendered so the
+// labels localize. Add app pages here: `to` is a Nuxt route, `icon` an MDI glyph.
 export const navItems: NavItem[] = [
-  { title: 'Dashboard', icon: 'mdi-view-dashboard-outline', to: '/' },
-  { title: 'Users', icon: 'mdi-account-group-outline', to: '/users' },
-  { title: 'Roles', icon: 'mdi-shield-account-outline', to: '/roles' }
+  { titleKey: 'nav.dashboard', icon: 'mdi-view-dashboard-outline', to: '/' },
+  { titleKey: 'nav.users', icon: 'mdi-account-group-outline', to: '/users' },
+  { titleKey: 'nav.roles', icon: 'mdi-shield-account-outline', to: '/roles' }
 ]

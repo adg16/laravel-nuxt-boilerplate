@@ -1,0 +1,89 @@
+{
+  "common": {
+    "logout": "Logout",
+    "backToSignIn": "Back to sign in",
+    "genericError": "Something went wrong. Please try again."
+  },
+  "nav": {
+    "dashboard": "Dashboard",
+    "users": "Users",
+    "roles": "Roles"
+  },
+  "a11y": {
+    "toggleMenu": "Toggle menu",
+    "accountMenu": "Account menu",
+    "language": "Language",
+    "enterFullscreen": "Enter full screen",
+    "exitFullscreen": "Exit full screen",
+    "switchToLight": "Switch to light mode",
+    "switchToDark": "Switch to dark mode",
+    "showPassword": "Show password",
+    "hidePassword": "Hide password"
+  },
+  "fields": {
+    "email": "Email",
+    "password": "Password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password"
+  },
+  "validation": {
+    "email": "Enter a valid email address.",
+    "passwordRequired": "Password is required.",
+    "passwordMin": "Password must be at least 8 characters.",
+    "passwordsNoMatch": "Passwords do not match."
+  },
+  "table": {
+    "name": "Name",
+    "email": "Email",
+    "role": "Role",
+    "status": "Status",
+    "description": "Description",
+    "users": "Users"
+  },
+  "status": {
+    "active": "Active",
+    "pending": "Pending",
+    "suspended": "Suspended"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in",
+      "subtitle": "Sign in to your account to continue.",
+      "forgot": "Forgot password?",
+      "submit": "Sign in",
+      "invalid": "Invalid credentials."
+    },
+    "forgot": {
+      "title": "Forgot your password?",
+      "subtitle": "Enter your email and we'll send you a link to reset it.",
+      "submit": "Send reset link"
+    },
+    "reset": {
+      "title": "Reset your password",
+      "subtitle": "Choose a new password for your account.",
+      "submit": "Reset password",
+      "invalidLinkTitle": "Invalid reset link",
+      "invalidLinkText": "This link is missing information. Please request a new one.",
+      "requestNew": "Request a new link",
+      "success": "Your password has been updated. Please sign in.",
+      "expired": "This reset link is invalid or has expired."
+    }
+  },
+  "dashboard": {
+    "recentUsers": "Recent Users",
+    "stats": {
+      "totalUsers": "Total Users",
+      "sessions": "Sessions",
+      "revenue": "Revenue",
+      "openTickets": "Open Tickets"
+    }
+  },
+  "users": {
+    "subtitle": "Manage the people who have access to this workspace.",
+    "new": "New User"
+  },
+  "roles": {
+    "subtitle": "Define what each group of users is allowed to do.",
+    "new": "New Role"
+  }
+}

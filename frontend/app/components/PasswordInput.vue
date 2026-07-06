@@ -22,7 +22,7 @@ function toggle() {
         size="small"
         density="comfortable"
         :icon="show ? 'mdi-eye-off' : 'mdi-eye'"
-        :aria-label="show ? 'Hide password' : 'Show password'"
+        :aria-label="show ? $t('a11y.hidePassword') : $t('a11y.showPassword')"
         :aria-pressed="show"
         @click="toggle"
       />

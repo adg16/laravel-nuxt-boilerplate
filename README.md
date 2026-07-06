@@ -8,6 +8,7 @@ A reusable, dockerized starting point for internal/backoffice web apps: a Larave
 - **Frontend**: Nuxt 4 (`ssr: false`), Pinia
 - **UI components**: Vuetify 4 (Material Design) with MDI icons (`@mdi/font`)
 - **Auth**: Laravel Sanctum SPA (stateful cookie session + CSRF)
+- **i18n**: `@nuxtjs/i18n` on the frontend + an `Accept-Language` middleware on the backend
 - **Database**: MariaDB
 - **Cache / session / queue**: Redis (separate logical DBs each)
 - **Web server**: nginx — fronts both the API and the SPA on the same origin
@@ -15,6 +16,22 @@ A reusable, dockerized starting point for internal/backoffice web apps: a Larave
 nginx routes `/api`, `/sanctum`, and `/up` to PHP-FPM; everything else goes to the Nuxt dev server in development, or a static `nuxi generate` build in production (no Node process in prod).
 
 Vuetify is wired up manually via `vite-plugin-vuetify` and a Nuxt plugin (`frontend/app/plugins/vuetify.ts`) — there's no Tailwind. That plugin is the single place for the theme (brand colors, light/dark) and app-wide component defaults. Forms use `v-form` + `v-text-field` with rules generated from Zod schemas (`frontend/app/utils/validation.ts`).
+
+## Internationalization
+
+Both tiers are localized, and the project ships with English (`en`) only — the wiring is in place so adding a language is a drop-in.
+
+- **Frontend** — `@nuxtjs/i18n` with `strategy: 'no_prefix'` (one URL per page, no `/en` `/fr` segments). The active locale is detected from the browser once and persisted in a cookie. Messages live in `frontend/i18n/locales/*.json`, and **every user-facing string is a translation key** — no hardcoded literals (including Zod validation messages, aria-labels, and page breadcrumbs/subtitles). A language switcher sits in the app bar and appears automatically once a second locale is configured.
+- **Backend** — the `SetLocale` middleware reads the `Accept-Language` header (sent by the SPA) and sets the app locale to the best match within `config('app.supported_locales')`, so API responses (validation/auth/password-reset messages) localize too. Laravel's translation files live under `backend/lang/<code>/`.
+
+**To add a locale** (e.g. `fr`):
+
+1. `frontend/i18n/locales/fr.json` — copy `en.json` and translate the values.
+2. Add `{ code: 'fr', name: 'Français', language: 'fr-FR', file: 'fr.json' }` to `i18n.locales` in `frontend/nuxt.config.ts`.
+3. Add `'fr'` to `supported_locales` in `backend/config/app.php`.
+4. `cp -r backend/lang/en backend/lang/fr` and translate the message files.
+
+The switcher then lights up on its own. When adding UI, keep the invariant: **new strings go through `$t()` / `t()` with a key in the locale file** — the `stack-review` skill flags hardcoded literals.
 
 ## Repo layout
 

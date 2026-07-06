@@ -6,6 +6,7 @@ definePageMeta({ layout: 'auth' })
 
 const auth = useAuthStore()
 const router = useRouter()
+const { t } = useI18n()
 const { loading, error, submit } = useSubmit()
 
 const formRef = ref<VForm>()
@@ -14,8 +15,8 @@ const state = reactive({
   password: ''
 })
 
-const emailRules = [zodRule(z.string().email('Enter a valid email address.'))]
-const passwordRules = [zodRule(z.string().min(1, 'Password is required.'))]
+const emailRules = [zodRule(z.string().email(t('validation.email')))]
+const passwordRules = [zodRule(z.string().min(1, t('validation.passwordRequired')))]
 
 async function onSubmit() {
   const { valid } = await formRef.value!.validate()
@@ -24,14 +25,14 @@ async function onSubmit() {
   await submit(async () => {
     await auth.login(state)
     router.push('/')
-  }, 'Invalid credentials.')
+  }, t('auth.login.invalid'))
 }
 </script>
 
 <template>
   <AuthCard
-    title="Sign in"
-    subtitle="Sign in to your account to continue."
+    :title="$t('auth.login.title')"
+    :subtitle="$t('auth.login.subtitle')"
   >
     <v-form
       ref="formRef"
@@ -42,7 +43,7 @@ async function onSubmit() {
       <v-text-field
         v-model="state.email"
         type="email"
-        label="Email"
+        :label="$t('fields.email')"
         autocomplete="email"
         placeholder="you@example.com"
         prepend-inner-icon="mdi-email-outline"
@@ -52,7 +53,7 @@ async function onSubmit() {
       <div>
         <PasswordInput
           v-model="state.password"
-          label="Password"
+          :label="$t('fields.password')"
           autocomplete="current-password"
           placeholder="••••••••"
           prepend-inner-icon="mdi-lock-outline"
@@ -63,7 +64,7 @@ async function onSubmit() {
             to="/forgot-password"
             class="text-body-small text-primary text-decoration-none font-weight-medium"
           >
-            Forgot password?
+            {{ $t('auth.login.forgot') }}
           </NuxtLink>
         </div>
       </div>
@@ -83,7 +84,7 @@ async function onSubmit() {
         block
         :loading="loading"
       >
-        Sign in
+        {{ $t('auth.login.submit') }}
       </v-btn>
     </v-form>
   </AuthCard>

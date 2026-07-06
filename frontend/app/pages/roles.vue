@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
-  breadcrumb: 'Roles',
-  subtitle: 'Define what each group of users is allowed to do.'
+  breadcrumb: 'nav.roles',
+  subtitle: 'roles.subtitle'
 })
 
 // Static placeholder data — swap for a real API-backed list later.
@@ -20,7 +20,7 @@ const roles = [
         color="primary"
         prepend-icon="mdi-plus"
       >
-        New Role
+        {{ $t('roles.new') }}
       </v-btn>
     </AppPageHeader>
 
@@ -32,13 +32,13 @@ const roles = [
         <thead>
           <tr>
             <th class="text-left">
-              Role
+              {{ $t('table.role') }}
             </th>
             <th class="text-left">
-              Description
+              {{ $t('table.description') }}
             </th>
             <th class="text-left">
-              Users
+              {{ $t('table.users') }}
             </th>
           </tr>
         </thead>

@@ -80,6 +80,14 @@ return [
 
     'locale' => env('APP_LOCALE', 'en'),
 
+    /*
+    | Locales the API will honor from the request's Accept-Language header (see
+    | the SetLocale middleware). The first entry is the fallback when the
+    | requested language isn't supported. Add a code here — and a matching
+    | lang/<code> directory — to enable another API response language.
+    */
+    'supported_locales' => ['en'],
+
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),

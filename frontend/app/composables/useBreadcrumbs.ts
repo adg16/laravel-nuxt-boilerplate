@@ -3,8 +3,12 @@ export type Crumb = { title: string, to?: string }
 // Shared source for the page location/title, derived from each matched route's
 // `breadcrumb` meta. Consumed by <AppBreadcrumbTrail> (the small location line)
 // and <AppPageTitle> (the page heading) so the two stay in sync from one place.
+//
+// Meta titles are i18n message keys (they must be static for the
+// `definePageMeta` macro), translated here so the labels localize.
 export function useBreadcrumbs() {
   const route = useRoute()
+  const { t } = useI18n()
 
   // A string meta becomes a single crumb linked to that route; an array is
   // spread in as-is. The last crumb is the current page.
@@ -13,16 +17,17 @@ export function useBreadcrumbs() {
     for (const record of route.matched) {
       const meta = record.meta.breadcrumb
       if (!meta) continue
-      if (typeof meta === 'string') list.push({ title: meta, to: record.path })
-      else list.push(...meta)
+      if (typeof meta === 'string') list.push({ title: t(meta), to: record.path })
+      else list.push(...meta.map(crumb => ({ title: t(crumb.title), to: crumb.to })))
     }
     return list
   })
 
   const current = computed(() => crumbs.value.at(-1)?.title ?? '')
 
-  // Optional subtitle, shown under the title (set via `definePageMeta`).
-  const subtitle = computed(() => route.meta.subtitle)
+  // Optional subtitle, shown under the title (set via `definePageMeta`, as an
+  // i18n key).
+  const subtitle = computed(() => route.meta.subtitle ? t(route.meta.subtitle) : undefined)
 
   return { crumbs, current, subtitle }
 }

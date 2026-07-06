@@ -5,6 +5,7 @@ import type { VForm } from 'vuetify/components'
 definePageMeta({ layout: 'auth' })
 
 const auth = useAuthStore()
+const { t } = useI18n()
 const { loading, error, submit } = useSubmit()
 const sentMessage = ref('')
 
@@ -13,7 +14,7 @@ const state = reactive({
   email: ''
 })
 
-const emailRules = [zodRule(z.string().email('Enter a valid email address.'))]
+const emailRules = [zodRule(z.string().email(t('validation.email')))]
 
 async function onSubmit() {
   const { valid } = await formRef.value!.validate()
@@ -27,8 +28,8 @@ async function onSubmit() {
 
 <template>
   <AuthCard
-    title="Forgot your password?"
-    subtitle="Enter your email and we'll send you a link to reset it."
+    :title="$t('auth.forgot.title')"
+    :subtitle="$t('auth.forgot.subtitle')"
   >
     <div
       v-if="sentMessage"
@@ -46,7 +47,7 @@ async function onSubmit() {
         prepend-icon="mdi-arrow-left"
         block
       >
-        Back to sign in
+        {{ $t('common.backToSignIn') }}
       </v-btn>
     </div>
 
@@ -60,7 +61,7 @@ async function onSubmit() {
       <v-text-field
         v-model="state.email"
         type="email"
-        label="Email"
+        :label="$t('fields.email')"
         autocomplete="email"
         placeholder="you@example.com"
         prepend-inner-icon="mdi-email-outline"
@@ -82,14 +83,14 @@ async function onSubmit() {
         block
         :loading="loading"
       >
-        Send reset link
+        {{ $t('auth.forgot.submit') }}
       </v-btn>
 
       <NuxtLink
         to="/login"
         class="text-center text-body-medium text-medium-emphasis text-decoration-none"
       >
-        Back to sign in
+        {{ $t('common.backToSignIn') }}
       </NuxtLink>
     </v-form>
   </AuthCard>

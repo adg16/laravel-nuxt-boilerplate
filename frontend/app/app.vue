@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const { locale } = useI18n()
+
 useHead({
   meta: [
     { name: 'viewport', content: 'width=device-width, initial-scale=1' }
@@ -10,7 +12,9 @@ useHead({
     { rel: 'apple-touch-icon', href: '/apple-touch-icon.png' }
   ],
   htmlAttrs: {
-    lang: 'en'
+    // Track the active locale so assistive tech and the browser know the
+    // document language.
+    lang: locale
   }
 })
 </script>

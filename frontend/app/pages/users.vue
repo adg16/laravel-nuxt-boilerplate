@@ -1,7 +1,7 @@
 <script setup lang="ts">
 definePageMeta({
-  breadcrumb: 'Users',
-  subtitle: 'Manage the people who have access to this workspace.'
+  breadcrumb: 'nav.users',
+  subtitle: 'users.subtitle'
 })
 
 // Static placeholder data — swap for a real API-backed list later.
@@ -29,7 +29,7 @@ const statusColor: Record<string, string> = {
         color="primary"
         prepend-icon="mdi-plus"
       >
-        New User
+        {{ $t('users.new') }}
       </v-btn>
     </AppPageHeader>
 
@@ -41,16 +41,16 @@ const statusColor: Record<string, string> = {
         <thead>
           <tr>
             <th class="text-left">
-              Name
+              {{ $t('table.name') }}
             </th>
             <th class="text-left">
-              Email
+              {{ $t('table.email') }}
             </th>
             <th class="text-left">
-              Role
+              {{ $t('table.role') }}
             </th>
             <th class="text-left">
-              Status
+              {{ $t('table.status') }}
             </th>
           </tr>
         </thead>
@@ -80,7 +80,7 @@ const statusColor: Record<string, string> = {
                 size="small"
                 variant="tonal"
               >
-                {{ user.status }}
+                {{ $t(`status.${user.status.toLowerCase()}`) }}
               </v-chip>
             </td>
           </tr>
