@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { useTheme, useDisplay } from 'vuetify'
 
-// `navItems` (the sidebar menu) is the single source in `app/utils/nav.ts`,
-// shared with <AppBreadcrumbs> — auto-imported here.
+// `navItems` (the sidebar menu) is the single source in `app/utils/nav.ts` —
+// auto-imported here.
 const auth = useAuthStore()
 const router = useRouter()
 const theme = useTheme()
@@ -124,10 +124,24 @@ async function handleLogout() {
           aria-label="Toggle menu"
           @click="drawer = !drawer"
         />
-        <!-- Desktop: page title/breadcrumb left-aligned in the bar (in `prepend`
-             so it hugs the left edge rather than centering in the empty title
-             area). On mobile it moves below the app bar — see <v-main>. -->
-        <AppBreadcrumbs
+        <!-- Mobile: brand logo sits right after the burger button (the desktop
+             bar shows the breadcrumb instead). -->
+        <v-avatar
+          v-if="isMobile"
+          rounded="lg"
+          size="32"
+          class="ms-1"
+        >
+          <v-img
+            src="/favicon.svg"
+            alt=""
+          />
+        </v-avatar>
+        <!-- Desktop: the small breadcrumb location line, left-aligned in the bar
+             (in `prepend` so it hugs the left edge). The prominent page title
+             lives in the body via <AppPageTitle>. On mobile the trail moves below
+             the app bar instead — see <v-main>. -->
+        <AppBreadcrumbTrail
           v-if="!isMobile"
           class="ms-5"
         />
@@ -199,19 +213,21 @@ async function handleLogout() {
     </v-app-bar>
 
     <v-main>
-      <!-- The layout owns the content shell: consistent page padding (the
-           breadcrumb/page title lives in the app bar), so pages only render
-           their body. -->
+      <!-- The layout owns the content shell: consistent page padding plus the
+           page title (and, on mobile, the breadcrumb trail), so pages only
+           render their body. -->
       <v-container
         fluid
         class="pa-4 pa-md-6"
       >
-        <!-- Mobile: breadcrumb sits below the app bar (below the burger menu);
-             on desktop it lives in the app bar instead. -->
-        <AppBreadcrumbs
+        <!-- Mobile: the breadcrumb trail sits below the app bar (the bar has no
+             room for it); on desktop it lives in the app bar instead. The page
+             title below is shown on both. -->
+        <AppBreadcrumbTrail
           v-if="isMobile"
-          class="mb-4"
+          class="mb-2"
         />
+        <AppPageTitle />
         <slot />
       </v-container>
     </v-main>
