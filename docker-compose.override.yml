@@ -42,5 +42,14 @@ services:
       - node-modules:/app/node_modules
     networks: [app]
 
+  # Local mail catcher: php/queue send over SMTP to mailpit:1025 (see
+  # backend/.env) and every message is captured — nothing leaves the machine.
+  # Read the inbox at http://localhost:${MAILPIT_PORT} (default 8025).
+  mailpit:
+    image: axllent/mailpit:v1.21
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
+    networks: [app]
+
 volumes:
   node-modules:

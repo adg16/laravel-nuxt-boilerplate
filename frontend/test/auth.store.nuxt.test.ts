@@ -16,6 +16,10 @@ const fakeUser: User = {
   id: 1,
   name: 'Admin',
   email: 'admin@example.com',
+  roles: ['super-admin'],
+  permissions: [],
+  is_protected: true,
+  is_verified: true,
   created_at: '2026-01-01T00:00:00.000000Z'
 }
 

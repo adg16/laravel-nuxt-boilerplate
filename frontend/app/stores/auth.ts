@@ -55,5 +55,19 @@ export const useAuthStore = defineStore('auth', () => {
     return message
   }
 
-  return { user, getCsrfCookie, fetchUser, login, register, logout, forgotPassword, resetPassword }
+  async function acceptInvitation(payload: {
+    token: string
+    email: string
+    password: string
+    password_confirmation: string
+  }): Promise<string> {
+    await getCsrfCookie()
+    const { message } = await api<{ message: string }>('/accept-invitation', {
+      method: 'POST',
+      body: payload
+    })
+    return message
+  }
+
+  return { user, getCsrfCookie, fetchUser, login, register, logout, forgotPassword, resetPassword, acceptInvitation }
 })

@@ -55,12 +55,26 @@ The app is served at http://localhost.
 
 ## Default user
 
-`make setup` (and `make fresh`) seed a default user via `backend/database/seeders/DatabaseSeeder.php`:
+`make setup` (and `make fresh`) seed a default super-admin via `backend/database/seeders/DatabaseSeeder.php`:
 
-- **Email**: `admin@example.com`
+- **Email**: `super.admin@example.com`
 - **Password**: `password`
 
 Override these before deploying anywhere real by setting `DEFAULT_USER_EMAIL` / `DEFAULT_USER_PASSWORD` in `backend/.env`. Re-run seeding any time with `make artisan ARGS=db:seed` (safe to repeat — it won't duplicate the user).
+
+The seeder also creates a permission-less **System** account (`SYSTEM_USER_EMAIL`, default `system@example.com`) with no usable password — it can't log in and is hidden from the user-management list. It exists to attribute app-generated activity (scheduled/automated events) that has no human actor; reference it in code via `User::system()`.
+
+## Email (local development)
+
+Outgoing mail is captured by **Mailpit** — a local SMTP catcher that never delivers anything externally, so you can safely test invitation and password-reset emails. `backend/.env` points `MAIL_MAILER=smtp` at the `mailpit` container (added by `docker-compose.override.yml`), and everything the app sends lands in a web inbox:
+
+**http://localhost:8025** — override the port with `MAILPIT_PORT` in the root `.env`.
+
+Mail is sent on the queue, so the `queue` worker must be running (it is by default) for messages to appear. Emails are brand-themed via the published Laravel mail views in `backend/resources/views/vendor/mail/`.
+
+> Compose injects `backend/.env` into the `php`/`queue` containers at **creation** time, so changes to `MAIL_*` need `docker compose up -d --force-recreate php queue` to take effect — a plain `restart` keeps the old values.
+
+In production, set real SMTP credentials in `backend/.env`; Mailpit only exists in the dev override.
 
 ## Common commands
 

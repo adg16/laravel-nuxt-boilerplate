@@ -2,12 +2,19 @@
   "common": {
     "logout": "Logout",
     "backToSignIn": "Back to sign in",
-    "genericError": "Something went wrong. Please try again."
+    "genericError": "Something went wrong. Please try again.",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "edit": "Edit",
+    "delete": "Delete"
   },
   "nav": {
     "dashboard": "Dashboard",
     "users": "Users",
-    "roles": "Roles"
+    "roles": "Roles",
+    "permissions": "Permissions",
+    "settings": "Settings"
   },
   "a11y": {
     "toggleMenu": "Toggle menu",
@@ -24,21 +31,30 @@
     "email": "Email",
     "password": "Password",
     "newPassword": "New password",
-    "confirmPassword": "Confirm password"
+    "confirmPassword": "Confirm password",
+    "name": "Name",
+    "roleName": "Role name",
+    "roles": "Roles"
   },
   "validation": {
     "email": "Enter a valid email address.",
     "passwordRequired": "Password is required.",
     "passwordMin": "Password must be at least 8 characters.",
-    "passwordsNoMatch": "Passwords do not match."
+    "passwordsNoMatch": "Passwords do not match.",
+    "required": "This field is required."
   },
   "table": {
     "name": "Name",
     "email": "Email",
     "role": "Role",
+    "roles": "Roles",
     "status": "Status",
     "description": "Description",
-    "users": "Users"
+    "users": "Users",
+    "permission": "Permission",
+    "permissions": "Permissions",
+    "usedBy": "Used by",
+    "actions": "Actions"
   },
   "status": {
     "active": "Active",
@@ -67,6 +83,15 @@
       "requestNew": "Request a new link",
       "success": "Your password has been updated. Please sign in.",
       "expired": "This reset link is invalid or has expired."
+    },
+    "invite": {
+      "title": "Accept your invitation",
+      "subtitle": "Set a password to activate your account.",
+      "submit": "Set password & continue",
+      "invalidLinkTitle": "Invalid invitation link",
+      "invalidLinkText": "This link is missing information. Please ask an administrator for a new invitation.",
+      "success": "Your account is ready. Please sign in.",
+      "expired": "This invitation is invalid or has expired."
     }
   },
   "dashboard": {
@@ -80,10 +105,86 @@
   },
   "users": {
     "subtitle": "Manage the people who have access to this workspace.",
-    "new": "New User"
+    "new": "New User",
+    "edit": "Edit User",
+    "invited": "Invitation sent.",
+    "created": "User created.",
+    "updated": "User updated.",
+    "sendInvite": "Send invite",
+    "create": "Create user",
+    "methodLabel": "How should they get access?",
+    "method": {
+      "invite": "Send invite",
+      "password": "Set password"
+    },
+    "resendInvite": "Resend invite",
+    "inviteHint": "The user will receive an email with a link to set their password.",
+    "cannotDeleteSelf": "You can't delete your own account.",
+    "protectedTooltip": "This account is protected and can't be modified.",
+    "verified": "Verified",
+    "pending": "Pending",
+    "alreadyAccepted": "Invitation already accepted.",
+    "delete": {
+      "title": "Delete user",
+      "text": "Delete {name}? This cannot be undone."
+    }
   },
   "roles": {
     "subtitle": "Define what each group of users is allowed to do.",
-    "new": "New Role"
+    "new": "New Role",
+    "edit": "Edit Role",
+    "created": "Role created.",
+    "updated": "Role updated.",
+    "permissions": "Permissions",
+    "allAccess": "Full access to everything",
+    "protectedTooltip": "The super-admin role is protected.",
+    "delete": {
+      "title": "Delete role",
+      "text": "Delete the {name} role? This cannot be undone."
+    }
+  },
+  "settings": {
+    "subtitle": "Configure how this workspace behaves.",
+    "saved": "Setting saved.",
+    "readonlyHint": "You have read-only access to settings.",
+    "on": "On",
+    "off": "Off",
+    "groups": {
+      "users": "Users",
+      "authentication": "Authentication"
+    },
+    "items": {
+      "user_creation_mode": {
+        "label": "New-user creation",
+        "description": "How new users get access when an admin creates them."
+      },
+      "registration_enabled": {
+        "label": "Public registration",
+        "description": "Allow people to create their own account via the sign-up endpoint."
+      }
+    },
+    "options": {
+      "user_creation_mode": {
+        "choice": "Let the admin choose per user",
+        "invite": "Always send an email invitation",
+        "set_password": "Admin sets the password"
+      }
+    }
+  },
+  "permissions": {
+    "subtitle": "The permissions your code enforces, and the roles that grant them.",
+    "readonlyHint": "Permissions are defined in code and can't be edited here — assign them to roles on the Roles page.",
+    "systemLocked": "Defined in code",
+    "unused": "Not used by any role",
+    "actions": {
+      "view": "View",
+      "manage": "Manage"
+    },
+    "resources": {
+      "users": "Users",
+      "roles": "Roles",
+      "permissions": "Permissions",
+      "settings": "Settings"
+    }
   }
 }

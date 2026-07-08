@@ -4,7 +4,13 @@ import { useTheme, useDisplay } from 'vuetify'
 // `navItems` (the sidebar menu) is the single source in `app/utils/nav.ts` —
 // auto-imported here.
 const auth = useAuthStore()
+const { can } = useAuthz()
 const router = useRouter()
+
+// Hide nav items the user isn't permitted to see; unguarded items always show.
+const visibleNavItems = computed(() =>
+  navItems.filter(item => !item.permission || can(item.permission))
+)
 const theme = useTheme()
 const display = useDisplay()
 const { appName, appTagline } = useRuntimeConfig().public
@@ -106,7 +112,7 @@ async function handleLogout() {
         density="comfortable"
       >
         <v-list-item
-          v-for="item in navItems"
+          v-for="item in visibleNavItems"
           :key="item.to"
           :to="item.to"
           :prepend-icon="item.icon"

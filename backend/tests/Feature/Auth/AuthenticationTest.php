@@ -33,6 +33,20 @@ class AuthenticationTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'jane@example.com']);
     }
 
+    public function test_registration_can_be_disabled_via_the_setting(): void
+    {
+        config()->set('users.registration_enabled', false);
+
+        $this->postJson('/api/register', [
+            'name' => 'Jane Doe',
+            'email' => 'jane@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertForbidden();
+
+        $this->assertDatabaseMissing('users', ['email' => 'jane@example.com']);
+    }
+
     public function test_user_can_login_and_fetch_authenticated_user(): void
     {
         $user = User::factory()->create(['password' => bcrypt('password')]);

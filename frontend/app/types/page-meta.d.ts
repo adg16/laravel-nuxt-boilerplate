@@ -12,6 +12,10 @@ declare module '#app' {
     // Optional subtitle (an i18n message key) shown under the page title in
     // <AppPageTitle>.
     subtitle?: string
+    // Optional permission required to view the route. Enforced by the global
+    // auth middleware (redirects home if the user lacks it) — a permission
+    // name from `~/constants/permissions`.
+    permission?: string
   }
 }
 

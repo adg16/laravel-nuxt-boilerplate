@@ -88,6 +88,14 @@ return [
     */
     'supported_locales' => ['en'],
 
+    /*
+    | The e-mail identifying the seeded "System" account — a permission-less
+    | service user that owns app-generated activity (scheduled jobs, automated
+    | events) with no human actor. Referenced via User::system(); protected from
+    | edits/deletion and hidden from the user-management list.
+    */
+    'system_user_email' => env('SYSTEM_USER_EMAIL', 'system@example.com'),
+
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),

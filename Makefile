@@ -1,4 +1,4 @@
-.PHONY: setup up down restart build sh-php sh-node artisan migrate fresh test logs lint lint-fix install-hooks
+.PHONY: setup up down restart build sh-php sh-node artisan migrate fresh test logs lint lint-fix install-hooks sync-permissions check-permissions
 
 setup:
 	[ -f .env ] || cp .env.example .env
@@ -42,10 +42,23 @@ migrate:
 fresh:
 	docker compose exec php php artisan migrate:fresh --seed
 
+# Sync the code-defined permissions to the DB and regenerate the frontend
+# constants from the same App\Enums\Permission enum. The php container can't
+# write into frontend/, so the host redirect writes the generated file.
+sync-permissions:
+	docker compose exec -T php php artisan permission:sync
+	docker compose exec -T php php artisan permission:export-ts > frontend/app/constants/permissions.ts
+	@echo "→ Synced permissions and regenerated frontend/app/constants/permissions.ts"
+
+# Fail if the generated frontend constants are out of date with the enum.
+check-permissions:
+	docker compose exec -T php php artisan permission:export-ts | diff -u - frontend/app/constants/permissions.ts
+
 test:
 	docker compose exec php php artisan test
 	docker compose exec node npm run typecheck
 	docker compose exec node npm run test
+	$(MAKE) check-permissions
 
 lint:
 	docker compose run --rm --no-deps php vendor/bin/pint --test
