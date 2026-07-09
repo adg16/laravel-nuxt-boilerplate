@@ -1,13 +1,13 @@
 # laravel-nuxt-boilerplate
 
-A reusable, dockerized starting point for internal/backoffice web apps: a Laravel API backend and a Nuxt SPA frontend, authenticated via Laravel Sanctum's cookie-based SPA auth.
+A reusable, dockerized starting point for internal/backoffice web apps: a Laravel API backend and a Nuxt SPA frontend, authenticated via Laravel Sanctum's cookie-based SPA auth (with Laravel Fortify driving the auth actions headlessly).
 
 ## Stack
 
 - **Backend**: Laravel 13 (PHP 8.5), API-only — no Blade views
 - **Frontend**: Nuxt 4 (`ssr: false`), Pinia
 - **UI components**: Vuetify 4 (Material Design) with MDI icons (`@mdi/font`)
-- **Auth**: Laravel Sanctum SPA (stateful cookie session + CSRF)
+- **Auth**: Laravel Sanctum SPA (stateful cookie session + CSRF), with Laravel Fortify driving login/register/logout/password-reset headlessly
 - **i18n**: `@nuxtjs/i18n` on the frontend + an `Accept-Language` middleware on the backend
 - **Database**: MariaDB
 - **Cache / session / queue**: Redis (separate logical DBs each)

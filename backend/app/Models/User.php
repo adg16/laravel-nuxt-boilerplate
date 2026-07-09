@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\QueuedResetPassword;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -69,5 +70,14 @@ class User extends Authenticatable
     public function isProtected(): bool
     {
         return $this->isSystem() || $this->hasRole('super-admin');
+    }
+
+    /**
+     * Send the password-reset link on a queue (see QueuedResetPassword) so a
+     * mail failure never surfaces as a 500 on the forgot-password request.
+     */
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new QueuedResetPassword($token));
     }
 }

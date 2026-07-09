@@ -13,19 +13,16 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/health', HealthController::class);
 
-// Rate-limit the unauthenticated auth endpoints to blunt credential brute-force
-// and reset-token guessing (6 requests/minute per client IP).
+// login / register / logout / forgot-password / reset-password are registered
+// by Laravel Fortify (prefixed with `api`, rate-limited + localized via
+// config/fortify.php). The invitation-acceptance flow is bespoke, so it stays
+// here — same 6/min-per-IP throttle to blunt token guessing.
 Route::middleware('throttle:6,1')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::post('/forgot-password', [AuthController::class, 'forgotPassword']);
-    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
     Route::post('/accept-invitation', [InvitationController::class, 'accept']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'me']);
-    Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/config', ConfigController::class);
 
     // Every management endpoint is gated here at the route level — this file is

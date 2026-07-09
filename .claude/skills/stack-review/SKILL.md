@@ -91,6 +91,9 @@ The first four dimensions are the native `/code-review` angles — run them firs
 - **i18n API used correctly.** `useI18n()` must be called at the top of a component `setup` — in composables/utilities that can run outside setup (`useApi`, `useSubmit`, plain `utils/*`), use `useNuxtApp().$i18n` instead (calling `useI18n()` there throws `Must be called at the top of a setup function`). New locales added to `nuxt.config.ts` `i18n.locales` need a matching `<code>.json`; new codes in the backend's `supported_locales` need a matching `backend/lang/<code>/` directory.
 - **Backend messages localizable.** New user-facing API strings that should localize go through `__()` / translation keys (as the password-reset flow does with `__($status)`), not hardcoded English in the controller — so the `SetLocale` middleware can translate them.
 
+**Documentation**
+- **Don't forget the docs.** If the change alters something a significant doc describes, flag the stale doc as a finding and name the exact section to update. Check the root `README.md`, the root `CLAUDE.md` (its Architecture/Commands/gotchas sections are load-bearing), any nested `CLAUDE.md`, and `make` targets / `.env.example` keys referenced in docs. Triggers include: new/changed/removed `make` command or Docker service, new env var or config key, a new architectural pattern or convention (auth/RBAC/settings/i18n flow), a changed setup/bootstrap step, a new dependency, or altered behavior a doc currently documents as working differently. A code change that makes an existing doc statement wrong is a finding; a doc that simply *could* mention the new thing but isn't now inaccurate is at most Low.
+
 ### 4. Verify before reporting
 
 Apply the native `/code-review` verify discipline so the report stays high-signal:
