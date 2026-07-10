@@ -7,9 +7,13 @@ use App\Actions\Fortify\DisableTwoFactorAuthentication;
 use App\Actions\Fortify\EnableTwoFactorAuthentication;
 use App\Actions\Fortify\RedirectIfTwoFactorAuthenticatable;
 use App\Actions\Fortify\ResetUserPassword;
+use App\Actions\Fortify\UpdateUserPassword;
+use App\Actions\Fortify\UpdateUserProfileInformation;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\LogoutResponse;
 use App\Http\Responses\PasswordResetLinkResponse;
+use App\Http\Responses\PasswordUpdateResponse;
+use App\Http\Responses\ProfileInformationUpdatedResponse;
 use App\Http\Responses\RegisterResponse;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
@@ -21,6 +25,8 @@ use Laravel\Fortify\Actions\EnableTwoFactorAuthentication as FortifyEnableTwoFac
 use Laravel\Fortify\Contracts\FailedPasswordResetLinkRequestResponse;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 use Laravel\Fortify\Contracts\LogoutResponse as LogoutResponseContract;
+use Laravel\Fortify\Contracts\PasswordUpdateResponse as PasswordUpdateResponseContract;
+use Laravel\Fortify\Contracts\ProfileInformationUpdatedResponse as ProfileInformationUpdatedResponseContract;
 use Laravel\Fortify\Contracts\RedirectsIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 use Laravel\Fortify\Contracts\SuccessfulPasswordResetLinkRequestResponse;
@@ -44,6 +50,12 @@ class FortifyServiceProvider extends ServiceProvider
         $this->app->singleton(SuccessfulPasswordResetLinkRequestResponse::class, PasswordResetLinkResponse::class);
         $this->app->singleton(FailedPasswordResetLinkRequestResponse::class, PasswordResetLinkResponse::class);
 
+        // Self-service profile/password updates: return the updated user (so the
+        // SPA store refreshes in place) and a localized message respectively,
+        // instead of Fortify's default empty 200s.
+        $this->app->singleton(ProfileInformationUpdatedResponseContract::class, ProfileInformationUpdatedResponse::class);
+        $this->app->singleton(PasswordUpdateResponseContract::class, PasswordUpdateResponse::class);
+
         // Two-factor is registered unconditionally, but the `two_factor_mode`
         // setting decides its behavior at runtime. Override the login-pipeline
         // step so an Off setting skips the challenge, and the enroll action so
@@ -60,6 +72,8 @@ class FortifyServiceProvider extends ServiceProvider
     {
         Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
+        Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
+        Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);
 
         // Authenticate manually so a bad credential set throws a 401
         // (AuthenticationException) — Fortify's default is a 422 validation

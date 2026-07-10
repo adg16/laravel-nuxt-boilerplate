@@ -24,8 +24,6 @@ const drawer = ref(!display.mobile.value)
 
 const isDark = computed(() => theme.global.current.value.dark)
 
-const userInitials = computed(() => getInitials(auth.user?.name))
-
 function toggleTheme() {
   theme.global.name.value = isDark.value ? 'light' : 'dark'
 }
@@ -181,12 +179,11 @@ async function handleLogout() {
               icon
               :aria-label="$t('a11y.accountMenu')"
             >
-              <v-avatar
-                color="primary"
-                size="34"
-              >
-                <span class="text-label-medium font-weight-bold">{{ userInitials }}</span>
-              </v-avatar>
+              <AppUserAvatar
+                :name="auth.user?.name"
+                :src="auth.user?.avatar_url"
+                :size="34"
+              />
             </v-btn>
           </template>
 
@@ -199,16 +196,21 @@ async function handleLogout() {
               :subtitle="auth.user.email"
             >
               <template #prepend>
-                <v-avatar
-                  color="primary"
-                  size="36"
-                >
-                  <span class="text-label-medium font-weight-bold">{{ userInitials }}</span>
-                </v-avatar>
+                <AppUserAvatar
+                  :name="auth.user.name"
+                  :src="auth.user.avatar_url"
+                  :size="36"
+                />
               </template>
             </v-list-item>
 
             <v-divider />
+
+            <v-list-item
+              to="/profile"
+              prepend-icon="mdi-account-circle-outline"
+              :title="$t('nav.profile')"
+            />
 
             <v-list-item
               to="/security"

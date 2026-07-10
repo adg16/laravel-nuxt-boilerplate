@@ -18,7 +18,8 @@
     "roles": "Roles",
     "permissions": "Permissions",
     "settings": "Settings",
-    "security": "Security"
+    "security": "Security",
+    "profile": "Profile"
   },
   "a11y": {
     "toggleMenu": "Toggle menu",
@@ -35,6 +36,7 @@
     "email": "Email",
     "password": "Password",
     "newPassword": "New password",
+    "currentPassword": "Current password",
     "confirmPassword": "Confirm password",
     "name": "Name",
     "roleName": "Role name",
@@ -212,6 +214,32 @@
         "email": "Email code only",
         "both": "Let users choose (app or email)"
       }
+    }
+  },
+  "profile": {
+    "subtitle": "Manage your account details.",
+    "description": "Update your personal information and password.",
+    "avatar": {
+      "title": "Profile photo",
+      "subtitle": "Upload a picture to personalize your account.",
+      "hint": "JPEG, PNG or WebP, up to {max} MB.",
+      "upload": "Upload photo",
+      "change": "Change photo",
+      "remove": "Remove",
+      "updated": "Profile photo updated.",
+      "removed": "Profile photo removed.",
+      "invalidType": "Choose a JPEG, PNG or WebP image.",
+      "tooLarge": "That image is too large — the maximum is {max} MB."
+    },
+    "info": {
+      "title": "Profile information",
+      "subtitle": "Update your name and email address.",
+      "saved": "Profile updated."
+    },
+    "password": {
+      "title": "Change password",
+      "subtitle": "Use a long, unique password to keep your account secure.",
+      "submit": "Update password"
     }
   },
   "security": {

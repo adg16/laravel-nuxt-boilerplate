@@ -15,6 +15,7 @@ return [
 
     'failed' => 'These credentials do not match our records.',
     'password' => 'The provided password is incorrect.',
+    'password_updated' => 'Password updated.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
     'registration_disabled' => 'Registration is currently disabled.',
     'logged_out' => 'Logged out.',

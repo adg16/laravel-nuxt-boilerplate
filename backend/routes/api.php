@@ -2,6 +2,7 @@
 
 use App\Enums\Permission;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\AvatarController;
 use App\Http\Controllers\Api\ConfigController;
 use App\Http\Controllers\Api\HealthController;
 use App\Http\Controllers\Api\InvitationController;
@@ -55,6 +56,18 @@ Route::middleware('auth:sanctum')->group(function () {
     // users lack).
     Route::get('user/two-factor/recovery-codes', [TwoFactorRecoveryController::class, 'index']);
     Route::post('user/two-factor/recovery-codes', [TwoFactorRecoveryController::class, 'store']);
+
+    // Self-service profile avatar. Upload/remove sit outside the enrollment gate
+    // (like profile/password) so the account stays editable, and are throttled
+    // like the other self-service mutations (Fortify's profile/password + the
+    // 2FA-email routes) to blunt upload spam. The image itself is served auth-only
+    // with no permission gate so avatars render in the app bar / user list — but
+    // still honoring the protected-account visibility rules (see the controller).
+    Route::middleware('throttle:6,1')->group(function () {
+        Route::post('user/avatar', [AvatarController::class, 'store']);
+        Route::delete('user/avatar', [AvatarController::class, 'destroy']);
+    });
+    Route::get('users/{user}/avatar', [AvatarController::class, 'show']);
 
     // Every management endpoint is gated here at the route level — this file is
     // the single place to audit "who can call what". Reads require *.view,

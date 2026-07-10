@@ -5,6 +5,10 @@ export interface User {
   id: number
   name: string
   email: string
+  // Same-origin URL to the user's avatar image (streamed by the API), or null
+  // when they haven't uploaded one. Carries a cache-busting `?v=` that changes
+  // with the image.
+  avatar_url: string | null
   // Role names and the flattened set of permission names the user holds
   // (via their roles). Drives the frontend guards in `useAuthz`.
   roles: string[]

@@ -16,6 +16,12 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            // Same-origin path to the streamed avatar image, or null. The `v=`
+            // cache-buster (a hash of the stored path) changes when the avatar
+            // does, so the browser refetches instead of showing a stale image.
+            'avatar_url' => $this->avatar_path
+                ? '/api/users/'.$this->id.'/avatar?v='.substr(md5($this->avatar_path), 0, 8)
+                : null,
             'roles' => $this->getRoleNames(),
             'permissions' => $this->getAllPermissions()->pluck('name')->values(),
             // Protected accounts (super-admin / System) can't be edited or

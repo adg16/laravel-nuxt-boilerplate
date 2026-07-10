@@ -11,15 +11,46 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_method'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_method', 'avatar_path'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
+
+    /**
+     * The disk avatars live on — the app's default filesystem disk
+     * (config/filesystems.php `default` / `FILESYSTEM_DISK`): the bundled MinIO
+     * (`s3`) in dev, real S3 in prod, the private `local` disk in tests. Whatever
+     * the disk, avatars are served through the authenticated avatar route rather
+     * than a public URL.
+     */
+    public static function avatarDisk(): string
+    {
+        return config('filesystems.default');
+    }
+
+    protected static function booted(): void
+    {
+        // Clean up the avatar file when the user is deleted so nothing is
+        // orphaned in storage.
+        static::deleted(fn (User $user) => $user->deleteAvatar());
+    }
+
+    /**
+     * Delete the user's avatar file (no-op when there's none). Does not touch the
+     * column — callers null `avatar_path` themselves.
+     */
+    public function deleteAvatar(): void
+    {
+        if ($this->avatar_path) {
+            Storage::disk(self::avatarDisk())->delete($this->avatar_path);
+        }
+    }
 
     /**
      * Get the attributes that should be cast.

@@ -270,12 +270,11 @@ async function onResetTwoFactor() {
           >
             <td>
               <div class="d-flex align-center ga-3">
-                <v-avatar
-                  color="primary"
-                  size="36"
-                >
-                  <span class="text-label-medium font-weight-bold">{{ getInitials(user.name) }}</span>
-                </v-avatar>
+                <AppUserAvatar
+                  :name="user.name"
+                  :src="user.avatar_url"
+                  :size="36"
+                />
                 <span class="font-weight-medium">{{ user.name }}</span>
               </div>
             </td>

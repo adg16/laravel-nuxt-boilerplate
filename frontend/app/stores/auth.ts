@@ -65,6 +65,39 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null
   }
 
+  // Self-service: update the signed-in user's own name/email. The API returns
+  // the fresh user, so refresh the store in place.
+  async function updateProfile(payload: { name: string, email: string }) {
+    user.value = await api<User>('/user/profile-information', { method: 'PUT', body: payload })
+  }
+
+  // Self-service: upload/replace the signed-in user's avatar (multipart). The
+  // API returns the fresh user (with the new avatar_url), so refresh in place.
+  async function uploadAvatar(file: File) {
+    const form = new FormData()
+    form.append('avatar', file)
+    user.value = await api<User>('/user/avatar', { method: 'POST', body: form })
+  }
+
+  // Self-service: remove the signed-in user's avatar.
+  async function removeAvatar() {
+    user.value = await api<User>('/user/avatar', { method: 'DELETE' })
+  }
+
+  // Self-service: change the signed-in user's password (requires the current
+  // one). Returns the localized confirmation message for a toast.
+  async function updatePassword(payload: {
+    current_password: string
+    password: string
+    password_confirmation: string
+  }): Promise<string> {
+    const { message } = await api<{ message: string }>('/user/password', {
+      method: 'PUT',
+      body: payload
+    })
+    return message
+  }
+
   async function forgotPassword(email: string): Promise<string> {
     await getCsrfCookie()
     const { message } = await api<{ message: string }>('/forgot-password', {
@@ -102,5 +135,5 @@ export const useAuthStore = defineStore('auth', () => {
     return message
   }
 
-  return { user, getCsrfCookie, fetchUser, login, twoFactorChallenge, emailChallenge, resendEmailChallenge, register, logout, forgotPassword, resetPassword, acceptInvitation }
+  return { user, getCsrfCookie, fetchUser, login, twoFactorChallenge, emailChallenge, resendEmailChallenge, register, logout, updateProfile, updatePassword, uploadAvatar, removeAvatar, forgotPassword, resetPassword, acceptInvitation }
 })
