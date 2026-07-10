@@ -4,7 +4,6 @@ import type { Permission } from '~/types/rbac'
 
 definePageMeta({
   breadcrumb: 'nav.permissions',
-  subtitle: 'permissions.subtitle',
   permission: PERMISSIONS.PermissionsView
 })
 

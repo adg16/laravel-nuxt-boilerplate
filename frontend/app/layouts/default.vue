@@ -17,10 +17,31 @@ const { appName, appTagline } = useRuntimeConfig().public
 
 const isMobile = computed(() => display.mobile.value)
 
-// Mobile: `drawer` opens/closes the temporary overlay (Vuetify makes the drawer
-// temporary automatically below the mobile breakpoint). Desktop keeps a
-// permanent icon rail that expands on hover — no toggle needed.
-const drawer = ref(!display.mobile.value)
+// Desktop can "pin" the drawer into the classic always-visible icon rail that
+// expands on hover (the previous behavior). Persisted in a cookie so the choice
+// survives reloads. Mobile is always a temporary overlay, so `isRail` ignores
+// the pin there.
+const railPinned = useCookie<boolean>('nav_pinned', { default: () => false })
+const isRail = computed(() => !isMobile.value && railPinned.value)
+
+// Drawer visibility. As a temporary overlay it is hidden by default and toggled
+// by the app-bar burger; as a pinned rail it must stay open. Vuetify only
+// auto-opens a permanent drawer when its `v-model` is *unbound* — since we bind
+// it, we must keep the model `true` ourselves while pinned. `watchEffect` runs
+// immediately, so this also restores the rail after a refresh reads the cookie
+// (otherwise `permanent` flips to true with no change event to open it).
+const drawer = ref(isRail.value)
+watchEffect(() => {
+  if (isRail.value) drawer.value = true
+})
+
+function togglePin() {
+  railPinned.value = !railPinned.value
+  // Unpinning turns the drawer back into a temporary overlay — collapse it so it
+  // doesn't linger open over the content (`watchEffect` handles re-opening when
+  // pinning).
+  if (!railPinned.value) drawer.value = false
+}
 
 const isDark = computed(() => theme.global.current.value.dark)
 
@@ -68,70 +89,27 @@ async function handleLogout() {
 
 <template>
   <div>
-    <v-navigation-drawer
-      v-model="drawer"
-      :permanent="!isMobile"
-      :rail="!isMobile"
-      :expand-on-hover="!isMobile"
-      :width="360"
-      elevation="2"
+    <!-- Top bar spans the full screen width: it's registered before the drawer,
+         so Vuetify's layout gives it the entire top edge and insets the drawer
+         below it (the drawer no longer occupies the top-left corner). -->
+    <v-app-bar
+      flat
+      border="b"
     >
-      <v-list
-        nav
-        class="py-0"
-      >
-        <v-list-item class="brand-header">
-          <template #prepend>
-            <v-avatar
-              rounded="lg"
-              class="brand-logo"
-            >
-              <v-img
-                src="/favicon.svg"
-                alt=""
-              />
-            </v-avatar>
-          </template>
-          <template #title>
-            <div class="d-flex flex-column">
-              <span class="text-title-medium font-weight-bold">{{ appName }}</span>
-              <!-- Tagline stacks under the name; hidden in the collapsed rail,
-                   revealed when the drawer expands (see the rail rule in <style>). -->
-              <span class="brand-tagline text-body-small text-medium-emphasis">
-                {{ appTagline }}
-              </span>
-            </div>
-          </template>
-        </v-list-item>
-      </v-list>
-
-      <v-list
-        nav
-        density="comfortable"
-      >
-        <v-list-item
-          v-for="item in visibleNavItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="$t(item.titleKey)"
-          color="primary"
-          rounded="lg"
-        />
-      </v-list>
-    </v-navigation-drawer>
-
-    <v-app-bar flat>
       <template #prepend>
+        <!-- The burger toggles the nav drawer and sits to the left of the brand.
+             Hidden when the drawer is pinned as a permanent rail (nothing to
+             toggle then). -->
         <v-app-bar-nav-icon
-          v-if="isMobile"
+          v-if="!isRail"
           :aria-label="$t('a11y.toggleMenu')"
           @click="drawer = !drawer"
         />
-        <!-- Mobile: brand logo sits right after the burger button (the desktop
-             bar shows the breadcrumb instead). -->
+        <!-- Brand logo hugs the left edge of the top bar (right of the burger).
+             On desktop the app name and tagline follow it; on mobile only the
+             logo shows. The prominent page title (with the breadcrumb trail
+             beneath it) lives in the body via <AppPageTitle> — see <v-main>. -->
         <v-avatar
-          v-if="isMobile"
           rounded="lg"
           size="32"
           class="ms-1"
@@ -141,14 +119,13 @@ async function handleLogout() {
             alt=""
           />
         </v-avatar>
-        <!-- Desktop: the small breadcrumb location line, left-aligned in the bar
-             (in `prepend` so it hugs the left edge). The prominent page title
-             lives in the body via <AppPageTitle>. On mobile the trail moves below
-             the app bar instead — see <v-main>. -->
-        <AppBreadcrumbTrail
+        <div
           v-if="!isMobile"
-          class="ms-5"
-        />
+          class="ms-2 d-flex flex-column"
+        >
+          <span class="text-title-medium font-weight-bold">{{ appName }}</span>
+          <span class="text-body-small text-medium-emphasis">{{ appTagline }}</span>
+        </div>
       </template>
 
       <template #append>
@@ -228,64 +205,78 @@ async function handleLogout() {
       </template>
     </v-app-bar>
 
+    <!-- Two modes: a temporary hidden-by-default overlay (the burger toggles it,
+         the scrim/Esc dismisses it) by default, or — when pinned on desktop — a
+         permanent icon rail that expands on hover (the previous behavior).
+         Registered after the app bar so it opens below the full-width top bar. -->
+    <v-navigation-drawer
+      v-model="drawer"
+      :temporary="!isRail"
+      :permanent="isRail"
+      :rail="isRail"
+      :expand-on-hover="isRail"
+      elevation="2"
+    >
+      <v-list
+        nav
+        density="comfortable"
+      >
+        <v-list-item
+          v-for="item in visibleNavItems"
+          :key="item.to"
+          :to="item.to"
+          :prepend-icon="item.icon"
+          :title="$t(item.titleKey)"
+          color="primary"
+          rounded="lg"
+        />
+      </v-list>
+
+      <!-- Desktop-only pin toggle, pinned to the drawer bottom: switches between
+           the temporary overlay and the permanent icon rail. Hidden on mobile,
+           which is always an overlay. -->
+      <template
+        v-if="!isMobile"
+        #append
+      >
+        <v-list
+          nav
+          density="comfortable"
+        >
+          <v-list-item
+            :prepend-icon="railPinned ? 'mdi-pin-off-outline' : 'mdi-pin-outline'"
+            :title="$t(railPinned ? 'nav.unpinMenu' : 'nav.pinMenu')"
+            rounded="lg"
+            @click="togglePin"
+          />
+        </v-list>
+      </template>
+    </v-navigation-drawer>
+
     <v-main>
       <!-- The layout owns the content shell: consistent page padding plus the
-           page title (and, on mobile, the breadcrumb trail), so pages only
-           render their body. -->
+           page title and its breadcrumb trail, so pages only render their body. -->
       <v-container
         fluid
         class="pa-4 pa-md-6"
       >
-        <!-- Mobile: the breadcrumb trail sits below the app bar (the bar has no
-             room for it); on desktop it lives in the app bar instead. The page
-             title below is shown on both. -->
-        <AppBreadcrumbTrail
-          v-if="isMobile"
-          class="mb-2"
-        />
-        <AppPageTitle />
+        <!-- Page header block: the title, with any page-level actions right-
+             aligned on the same line (a page's <AppPageHeader> teleports its
+             buttons into #page-actions), the breadcrumb trail just beneath, and a
+             consistent gap down to the page body. -->
+        <div class="mb-6">
+          <div class="d-flex flex-wrap align-center ga-4">
+            <AppPageTitle />
+            <v-spacer />
+            <div
+              id="page-actions"
+              class="d-flex align-center ga-2"
+            />
+          </div>
+          <AppBreadcrumbTrail class="mt-1" />
+        </div>
         <slot />
       </v-container>
     </v-main>
   </div>
 </template>
-
-<style scoped>
-/* Match the app bar's 64px height so the drawer's header divider lines up with
-   the app bar's bottom border. `--v-list-prepend-gap` tightens the space between
-   the logo and the app name (Vuetify defaults it to 16px for avatars). */
-.brand-header {
-  min-height: 64px;
-  --v-list-prepend-gap: 8px;
-}
-
-/* Keep the logo a constant 36px in both the collapsed rail and the expanded
-   drawer. We size it via the avatar's CSS variable (not the `size` prop, whose
-   inline width/height would be overridden by Vuetify's rail rule); scoped styles
-   are unlayered and therefore win over that layered rail rule.
-
-   The 36px logo and the 24px nav icons share the same left edge, so the larger
-   logo's centre sits (36 − 24) / 2 = 6px further right. Nudge it back 6px in
-   both states so its centre stays on the nav-icon column and its left margin is
-   identical whether the drawer is collapsed or expanded. */
-.brand-logo {
-  --v-avatar-height: 36px;
-  transform: translateX(-6px);
-}
-
-/* Keep the tagline on a single line so it never reflows while the drawer's width
-   animates open (multi-line reflow would change the content height and re-centre
-   the logo/name — the flicker). The drawer is widened enough to fit it. */
-.brand-tagline {
-  white-space: nowrap;
-  line-height: 1.25;
-  transition: opacity 0.2s ease;
-}
-
-/* Hide the tagline in the collapsed rail with opacity (not display) so its line
-   stays reserved — the content height is constant, so nothing shifts vertically
-   when the drawer expands; the tagline just fades in as it opens. */
-.v-navigation-drawer--rail:not(.v-navigation-drawer--is-hovering) .brand-tagline {
-  opacity: 0;
-}
-</style>

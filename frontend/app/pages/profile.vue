@@ -7,8 +7,7 @@ import { z } from 'zod'
 import type { VForm } from 'vuetify/components'
 
 definePageMeta({
-  breadcrumb: 'nav.profile',
-  subtitle: 'profile.subtitle'
+  breadcrumb: 'nav.profile'
 })
 
 const auth = useAuthStore()

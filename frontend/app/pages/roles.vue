@@ -6,7 +6,6 @@ import type { Permission, Role } from '~/types/rbac'
 
 definePageMeta({
   breadcrumb: 'nav.roles',
-  subtitle: 'roles.subtitle',
   permission: PERMISSIONS.RolesView
 })
 
@@ -236,10 +235,10 @@ async function onDelete() {
       :persistent="saving"
     >
       <v-card>
-        <v-card-title class="text-title-large">
+        <v-card-title class="text-title-large px-6 pt-6 pb-2">
           {{ editing ? $t('roles.edit') : $t('roles.new') }}
         </v-card-title>
-        <v-card-text>
+        <v-card-text class="px-6 py-2">
           <v-form
             ref="formRef"
             validate-on="submit"
@@ -285,7 +284,7 @@ async function onDelete() {
             />
           </v-form>
         </v-card-text>
-        <v-card-actions class="px-4 pb-4">
+        <v-card-actions class="px-6 pt-2 pb-6">
           <v-spacer />
           <v-btn
             variant="text"

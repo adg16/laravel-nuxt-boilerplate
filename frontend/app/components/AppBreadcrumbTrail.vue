@@ -1,7 +1,7 @@
 <script setup lang="ts">
-// The small "where am I" location line for the app bar. Renders the full trail
-// including the current page as the last, non-linked item (a conventional
-// breadcrumb). The prominent page heading lives separately in <AppPageTitle>.
+// The small "where am I" location line rendered beneath the page title. Renders
+// the full trail including the current page as the last, non-linked item (a
+// conventional breadcrumb). The prominent page heading lives in <AppPageTitle>.
 const { crumbs } = useBreadcrumbs()
 
 // Strip `to` from the current (last) crumb so it renders as plain text, not a
@@ -12,8 +12,11 @@ const items = computed(() => crumbs.value.map(
 </script>
 
 <template>
+  <!-- Only render for nested pages (2+ crumbs). A single crumb is just the
+       current page, which already shows as the <AppPageTitle> heading — rendering
+       it here too would read as a doubled page title. -->
   <v-breadcrumbs
-    v-if="items.length"
+    v-if="items.length > 1"
     :items="items"
     class="pa-0 text-body-small text-medium-emphasis"
   >

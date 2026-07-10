@@ -5,8 +5,7 @@
 // which the user may enroll. States: disabled → enrolling (a pending setup
 // awaiting confirmation) → enabled.
 definePageMeta({
-  breadcrumb: 'nav.security',
-  subtitle: 'security.subtitle'
+  breadcrumb: 'nav.security'
 })
 
 const auth = useAuthStore()

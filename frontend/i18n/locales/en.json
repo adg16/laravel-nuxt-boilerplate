@@ -19,7 +19,9 @@
     "permissions": "Permissions",
     "settings": "Settings",
     "security": "Security",
-    "profile": "Profile"
+    "profile": "Profile",
+    "pinMenu": "Pin menu",
+    "unpinMenu": "Unpin menu"
   },
   "a11y": {
     "toggleMenu": "Toggle menu",
@@ -125,7 +127,6 @@
     }
   },
   "users": {
-    "subtitle": "Manage the people who have access to this workspace.",
     "new": "New User",
     "edit": "Edit User",
     "invited": "Invitation sent.",
@@ -157,7 +158,6 @@
     }
   },
   "roles": {
-    "subtitle": "Define what each group of users is allowed to do.",
     "new": "New Role",
     "edit": "Edit Role",
     "created": "Role created.",
@@ -171,7 +171,6 @@
     }
   },
   "settings": {
-    "subtitle": "Configure how this workspace behaves.",
     "saved": "Setting saved.",
     "readonlyHint": "You have read-only access to settings.",
     "on": "On",
@@ -213,7 +212,6 @@
     }
   },
   "profile": {
-    "subtitle": "Manage your account details.",
     "description": "Update your personal information and password.",
     "avatar": {
       "title": "Profile photo",
@@ -239,7 +237,6 @@
     }
   },
   "security": {
-    "subtitle": "Manage two-factor authentication for your account.",
     "description": "Add an extra layer of protection when you sign in.",
     "requiredHint": "Two-factor authentication is required. Set it up below to continue using the app.",
     "unavailable": "Two-factor authentication is currently disabled by an administrator.",
@@ -294,7 +291,6 @@
     "recoveryRegenerated": "New recovery codes generated."
   },
   "permissions": {
-    "subtitle": "The permissions your code enforces, and the roles that grant them.",
     "readonlyHint": "Permissions are defined in code and can't be edited here — assign them to roles on the Roles page.",
     "systemLocked": "Defined in code",
     "unused": "Not used by any role",

@@ -1,25 +1,17 @@
 <script setup lang="ts">
-// The prominent page heading (+ optional subtitle) rendered at the top of the
-// page body. Paired with <AppBreadcrumbTrail>, which carries the small location
-// line in the app bar (desktop) or above this title (mobile).
-const { current, subtitle } = useBreadcrumbs()
+// The prominent page heading rendered at the top of the page body. Paired with
+// <AppBreadcrumbTrail>, the small location line the layout renders directly
+// beneath this title.
+const { current } = useBreadcrumbs()
 </script>
 
 <template>
-  <div
+  <!-- Neutral high-emphasis, text-only title: safe contrast in both themes and
+       calmer than repeating the sidebar's nav icon here. -->
+  <h1
     v-if="current"
-    class="mb-6"
+    class="text-title-large font-weight-bold my-0"
   >
-    <!-- Neutral high-emphasis, text-only title: safe contrast in both themes and
-         calmer than repeating the sidebar's nav icon here. -->
-    <h1 class="text-headline-small font-weight-bold my-0">
-      {{ current }}
-    </h1>
-    <p
-      v-if="subtitle"
-      class="text-body-medium text-medium-emphasis mt-1 mb-0"
-    >
-      {{ subtitle }}
-    </p>
-  </div>
+    {{ current }}
+  </h1>
 </template>

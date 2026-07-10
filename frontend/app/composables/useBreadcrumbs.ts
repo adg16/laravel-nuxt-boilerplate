@@ -25,9 +25,5 @@ export function useBreadcrumbs() {
 
   const current = computed(() => crumbs.value.at(-1)?.title ?? '')
 
-  // Optional subtitle, shown under the title (set via `definePageMeta`, as an
-  // i18n key).
-  const subtitle = computed(() => route.meta.subtitle ? t(route.meta.subtitle) : undefined)
-
-  return { crumbs, current, subtitle }
+  return { crumbs, current }
 }

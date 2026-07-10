@@ -4,7 +4,6 @@ import type { Setting, SettingValue } from '~/types/settings'
 
 definePageMeta({
   breadcrumb: 'nav.settings',
-  subtitle: 'settings.subtitle',
   permission: PERMISSIONS.SettingsView
 })
 
