@@ -18,7 +18,6 @@ use App\Support\SettingDefinition;
 enum Setting: string
 {
     case UserCreationMode = 'user_creation_mode';
-    case RegistrationEnabled = 'registration_enabled';
     case TwoFactorMode = 'two_factor_mode';
     case TwoFactorMethods = 'two_factor_methods';
 
@@ -34,11 +33,6 @@ enum Setting: string
                 default: (string) config('users.creation_mode', UserCreationMode::Choice->value),
                 group: 'users',
                 options: UserCreationMode::values(),
-            ),
-            self::RegistrationEnabled => new SettingDefinition(
-                type: SettingType::Toggle,
-                default: (bool) config('users.registration_enabled', true),
-                group: 'authentication',
             ),
             self::TwoFactorMode => new SettingDefinition(
                 type: SettingType::Select,

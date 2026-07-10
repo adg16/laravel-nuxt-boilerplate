@@ -17,7 +17,6 @@ return [
     'password' => 'The provided password is incorrect.',
     'password_updated' => 'Password updated.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
-    'registration_disabled' => 'Registration is currently disabled.',
     'logged_out' => 'Logged out.',
     'two_factor_setup_required' => 'Two-factor authentication must be enabled before you can continue.',
     'two_factor_unavailable' => 'Two-factor authentication is not available.',

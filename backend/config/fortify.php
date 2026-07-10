@@ -87,7 +87,7 @@ return [
     | that it registers with the application. If necessary, you may change
     | subdomain under which all of the Fortify routes will be available.
     |
-    | Prefixed with `api` so every Fortify route (login, register, logout,
+    | Prefixed with `api` so every Fortify route (login, logout,
     | forgot/reset-password) lands under `/api/*` — the only path the
     | same-origin nginx routes to PHP-FPM (everything else serves the SPA).
     |
@@ -158,11 +158,13 @@ return [
     | by removing them from this array. You're free to only remove some of
     | these features or you can even remove all of these if you need to.
     |
-    | Login/logout (always registered), registration, password reset, two-factor,
-    | and self-service profile/password updates are enabled. Profile/password
+    | Login/logout (always registered), password reset, two-factor, and
+    | self-service profile/password updates are enabled. Profile/password
     | self-service edits the signed-in user's *own* record (name, email, password)
     | from the /profile page; admin account management still goes through the
-    | permissioned UserController. Email verification stays off.
+    | permissioned UserController. Public self-registration and email verification
+    | stay off — this is an internal backoffice tool, so accounts are created by
+    | admins (UserController) or via the invitation flow, never self-signup.
     |
     | Two-factor is registered here *unconditionally* (routes always exist).
     | Whether it actually applies — off / optional / required — is a runtime
@@ -180,7 +182,6 @@ return [
     */
 
     'features' => [
-        Features::registration(),
         Features::resetPasswords(),
         // Features::emailVerification(),
         Features::updateProfileInformation(),

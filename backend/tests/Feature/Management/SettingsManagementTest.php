@@ -39,25 +39,6 @@ class SettingsManagementTest extends TestCase
             ->assertJsonPath('0.options', ['choice', 'invite', 'set_password']);
     }
 
-    public function test_a_toggle_setting_is_listed_and_saved_as_a_real_boolean(): void
-    {
-        $admin = User::factory()->create()->assignRole('admin');
-        $this->loginAs($admin);
-
-        // Listed with a boolean value + toggle type (not a stringly-typed "1").
-        $this->getJson('/api/settings')
-            ->assertOk()
-            ->assertJsonPath('1.key', 'registration_enabled')
-            ->assertJsonPath('1.type', 'toggle')
-            ->assertJsonPath('1.value', true);
-
-        $this->putJson('/api/settings/registration_enabled', ['value' => false])
-            ->assertOk()
-            ->assertJsonPath('value', false);
-
-        $this->assertFalse(app(Settings::class)->bool(Setting::RegistrationEnabled));
-    }
-
     public function test_user_without_settings_view_is_forbidden(): void
     {
         $user = User::factory()->create(); // no roles

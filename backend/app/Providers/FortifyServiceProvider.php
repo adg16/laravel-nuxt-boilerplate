@@ -2,7 +2,6 @@
 
 namespace App\Providers;
 
-use App\Actions\Fortify\CreateNewUser;
 use App\Actions\Fortify\DisableTwoFactorAuthentication;
 use App\Actions\Fortify\EnableTwoFactorAuthentication;
 use App\Actions\Fortify\RedirectIfTwoFactorAuthenticatable;
@@ -14,7 +13,6 @@ use App\Http\Responses\LogoutResponse;
 use App\Http\Responses\PasswordResetLinkResponse;
 use App\Http\Responses\PasswordUpdateResponse;
 use App\Http\Responses\ProfileInformationUpdatedResponse;
-use App\Http\Responses\RegisterResponse;
 use App\Models\User;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
@@ -28,7 +26,6 @@ use Laravel\Fortify\Contracts\LogoutResponse as LogoutResponseContract;
 use Laravel\Fortify\Contracts\PasswordUpdateResponse as PasswordUpdateResponseContract;
 use Laravel\Fortify\Contracts\ProfileInformationUpdatedResponse as ProfileInformationUpdatedResponseContract;
 use Laravel\Fortify\Contracts\RedirectsIfTwoFactorAuthenticatable;
-use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 use Laravel\Fortify\Contracts\SuccessfulPasswordResetLinkRequestResponse;
 use Laravel\Fortify\Contracts\TwoFactorLoginResponse as TwoFactorLoginResponseContract;
 use Laravel\Fortify\Fortify;
@@ -38,14 +35,13 @@ class FortifyServiceProvider extends ServiceProvider
     public function register(): void
     {
         // Headless (JSON) responses in place of Fortify's Blade-oriented
-        // defaults. Login/Register return the user; the two forgot-password
-        // outcomes are made indistinguishable for anti-enumeration.
+        // defaults. Login returns the user; the two forgot-password outcomes are
+        // made indistinguishable for anti-enumeration.
         $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
         // A completed two-factor challenge returns its own response type — bind
         // it to the same user payload so the SPA gets the user (not Fortify's
         // default empty 204) whether login was one-step or via a 2FA challenge.
         $this->app->singleton(TwoFactorLoginResponseContract::class, LoginResponse::class);
-        $this->app->singleton(RegisterResponseContract::class, RegisterResponse::class);
         $this->app->singleton(LogoutResponseContract::class, LogoutResponse::class);
         $this->app->singleton(SuccessfulPasswordResetLinkRequestResponse::class, PasswordResetLinkResponse::class);
         $this->app->singleton(FailedPasswordResetLinkRequestResponse::class, PasswordResetLinkResponse::class);
@@ -70,7 +66,6 @@ class FortifyServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Fortify::createUsersUsing(CreateNewUser::class);
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::updateUserProfileInformationUsing(UpdateUserProfileInformation::class);
         Fortify::updateUserPasswordsUsing(UpdateUserPassword::class);

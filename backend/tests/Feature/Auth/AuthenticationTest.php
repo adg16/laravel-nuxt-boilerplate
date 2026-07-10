@@ -19,30 +19,17 @@ class AuthenticationTest extends TestCase
         $this->withHeader('Referer', config('app.url'));
     }
 
-    public function test_user_can_register(): void
+    public function test_public_registration_route_is_not_registered(): void
     {
-        $response = $this->postJson('/api/register', [
-            'name' => 'Jane Doe',
-            'email' => 'jane@example.com',
-            'password' => 'password',
-            'password_confirmation' => 'password',
-        ]);
-
-        $response->assertCreated()->assertJsonPath('email', 'jane@example.com');
-
-        $this->assertDatabaseHas('users', ['email' => 'jane@example.com']);
-    }
-
-    public function test_registration_can_be_disabled_via_the_setting(): void
-    {
-        config()->set('users.registration_enabled', false);
-
+        // This is an internal backoffice tool: self-registration is disabled
+        // entirely (the Fortify `registration` feature is off), so /api/register
+        // simply doesn't exist. Accounts come from admins / the invitation flow.
         $this->postJson('/api/register', [
             'name' => 'Jane Doe',
             'email' => 'jane@example.com',
             'password' => 'password',
             'password_confirmation' => 'password',
-        ])->assertForbidden();
+        ])->assertNotFound();
 
         $this->assertDatabaseMissing('users', ['email' => 'jane@example.com']);
     }

@@ -185,10 +185,6 @@
         "label": "New-user creation",
         "description": "How new users get access when an admin creates them."
       },
-      "registration_enabled": {
-        "label": "Public registration",
-        "description": "Allow people to create their own account via the sign-up endpoint."
-      },
       "two_factor_mode": {
         "label": "Two-factor authentication",
         "description": "Require a time-based one-time code at sign-in, in addition to a password."

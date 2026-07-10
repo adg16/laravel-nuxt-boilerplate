@@ -55,11 +55,6 @@ export const useAuthStore = defineStore('auth', () => {
     return message
   }
 
-  async function register(payload: { name: string, email: string, password: string, password_confirmation: string }) {
-    await getCsrfCookie()
-    user.value = await api<User>('/register', { method: 'POST', body: payload })
-  }
-
   async function logout() {
     await api('/logout', { method: 'POST' })
     user.value = null
@@ -135,5 +130,5 @@ export const useAuthStore = defineStore('auth', () => {
     return message
   }
 
-  return { user, getCsrfCookie, fetchUser, login, twoFactorChallenge, emailChallenge, resendEmailChallenge, register, logout, updateProfile, updatePassword, uploadAvatar, removeAvatar, forgotPassword, resetPassword, acceptInvitation }
+  return { user, getCsrfCookie, fetchUser, login, twoFactorChallenge, emailChallenge, resendEmailChallenge, logout, updateProfile, updatePassword, uploadAvatar, removeAvatar, forgotPassword, resetPassword, acceptInvitation }
 })

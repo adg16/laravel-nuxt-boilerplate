@@ -7,7 +7,7 @@ use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 
 /**
- * Login / register / logout / password-reset are handled by Laravel Fortify
+ * Login / logout / password-reset are handled by Laravel Fortify
  * (see FortifyServiceProvider + config/fortify.php). All that remains here is
  * the "who am I" endpoint the SPA calls to hydrate the auth store.
  */

@@ -13,13 +13,6 @@ return [
     'creation_mode' => env('USER_CREATION_MODE', 'choice'),
 
     /*
-    | Default for the `registration_enabled` setting — whether the public
-    | /api/register endpoint accepts self-signups. Editable at runtime from the
-    | Settings UI.
-    */
-    'registration_enabled' => env('REGISTRATION_ENABLED', true),
-
-    /*
     | The default super-admin seeded by DatabaseSeeder. Read via config (not
     | env() directly in the seeder) so it resolves correctly under cached config.
     */
