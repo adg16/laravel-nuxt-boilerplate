@@ -54,8 +54,8 @@ async function load() {
   loading.value = true
   try {
     users.value = await usersApi.list()
-  } catch {
-    notify(t('common.genericError'), 'error')
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
   } finally {
     loading.value = false
   }
@@ -155,8 +155,7 @@ async function resendInvite(user: User) {
     const { message } = await usersApi.resendInvite(user.id)
     notify(message)
   } catch (e) {
-    const err = e as { data?: { message?: string } }
-    notify(err.data?.message ?? t('common.genericError'), 'error')
+    notify(apiErrorMessage(e), 'error')
   }
 }
 
@@ -179,8 +178,7 @@ async function onDelete() {
     deleteDialog.value = false
     await load()
   } catch (e) {
-    const err = e as { data?: { message?: string } }
-    notify(err.data?.message ?? t('common.genericError'), 'error')
+    notify(apiErrorMessage(e), 'error')
   } finally {
     deleting.value = false
   }
@@ -205,8 +203,7 @@ async function onResetTwoFactor() {
     resetDialog.value = false
     await load()
   } catch (e) {
-    const err = e as { data?: { message?: string } }
-    notify(err.data?.message ?? t('common.genericError'), 'error')
+    notify(apiErrorMessage(e), 'error')
   } finally {
     resetting.value = false
   }

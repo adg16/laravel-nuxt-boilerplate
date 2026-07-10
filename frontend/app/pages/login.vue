@@ -68,8 +68,8 @@ async function onResend() {
   resending.value = true
   try {
     notify(await auth.resendEmailChallenge())
-  } catch {
-    notify(t('common.genericError'), 'error')
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
   } finally {
     resending.value = false
   }

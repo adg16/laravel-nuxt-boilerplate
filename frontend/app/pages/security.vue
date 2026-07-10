@@ -56,6 +56,20 @@ const enabledSubtitle = computed(() =>
     : t('security.card.enabled')
 )
 
+// Switching methods (only when the policy lets users choose): re-enroll the
+// *other* method. Replace-immediately — the current method is torn down as soon
+// as enrollment starts, so the user must confirm the new one to be protected
+// again (the confirm dialog warns of this).
+const activeMethod = computed<'totp' | 'email' | null>(() => auth.user?.two_factor_method ?? null)
+const otherMethod = computed<'totp' | 'email'>(() => (activeMethod.value === 'email' ? 'totp' : 'email'))
+const changeDialog = ref(false)
+
+async function changeMethod() {
+  changeDialog.value = false
+  chosenMethod.value = otherMethod.value
+  await startEnroll()
+}
+
 async function startEnroll() {
   busy.value = true
   const m = effectiveMethod.value
@@ -72,8 +86,13 @@ async function startEnroll() {
     }
     enrollMethod.value = m
     enrolling.value = true
-  } catch {
-    notify(t('common.genericError'), 'error')
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
+    // The enrollment may have partially applied server-side before failing —
+    // e.g. a method *switch* tears down the old factor in tf.enable()/enableEmail()
+    // before the QR/secret fetch — so re-sync the user rather than leave the UI
+    // showing a stale "enabled" state that no longer matches the backend.
+    await auth.fetchUser()
   } finally {
     busy.value = false
   }
@@ -90,8 +109,8 @@ async function confirm() {
     showRecovery.value = true // keep the codes visible on the enabled screen
     notify(t('security.enabledToast'))
   } catch (e) {
-    const err = e as { data?: { errors?: { code?: string[] }, message?: string } }
-    codeError.value = err.data?.errors?.code?.[0] ?? err.data?.message ?? t('auth.twoFactor.invalid')
+    const err = e as { data?: { errors?: { code?: string[] } } }
+    codeError.value = err.data?.errors?.code?.[0] ?? apiErrorMessage(e, t('auth.twoFactor.invalid'))
   } finally {
     confirming.value = false
   }
@@ -101,8 +120,8 @@ async function resendEnrollCode() {
   try {
     await tf.resendEmailEnroll()
     notify(t('security.email.resent'))
-  } catch {
-    notify(t('common.genericError'), 'error')
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
   }
 }
 
@@ -116,7 +135,9 @@ function resetEnroll() {
 }
 
 // Cancelling a half-finished enrollment removes the pending (unconfirmed) setup
-// so it doesn't linger on the account.
+// so it doesn't linger on the account. Re-fetch the user afterwards: cancelling
+// a *method switch* leaves 2FA off (the old method was already torn down), and
+// the UI must reflect that.
 async function cancelEnroll() {
   busy.value = true
   try {
@@ -125,6 +146,7 @@ async function cancelEnroll() {
     // Best-effort teardown; reset the UI regardless.
   } finally {
     resetEnroll()
+    await auth.fetchUser()
     busy.value = false
   }
 }
@@ -137,8 +159,8 @@ async function disable() {
     resetEnroll()
     showRecovery.value = false
     notify(t('security.disabledToast'))
-  } catch {
-    notify(t('common.genericError'), 'error')
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
   } finally {
     busy.value = false
   }
@@ -148,8 +170,8 @@ async function revealRecovery() {
   try {
     recoveryCodes.value = await tf.recoveryCodes()
     showRecovery.value = true
-  } catch {
-    notify(t('common.genericError'), 'error')
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
   }
 }
 
@@ -159,8 +181,8 @@ async function regenerate() {
     recoveryCodes.value = await tf.regenerateRecoveryCodes()
     showRecovery.value = true
     notify(t('security.recoveryRegenerated'))
-  } catch {
-    notify(t('common.genericError'), 'error')
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
   } finally {
     busy.value = false
   }
@@ -394,6 +416,27 @@ async function regenerate() {
             </div>
           </div>
 
+          <!-- Change method — only when the policy lets users choose. -->
+          <template v-if="canChooseMethod">
+            <v-divider />
+            <div>
+              <div class="text-title-small mb-1">
+                {{ $t('security.changeMethod.title') }}
+              </div>
+              <p class="text-body-small text-medium-emphasis mb-3">
+                {{ $t('security.changeMethod.hint') }}
+              </p>
+              <v-btn
+                variant="outlined"
+                prepend-icon="mdi-swap-horizontal"
+                :disabled="busy"
+                @click="changeDialog = true"
+              >
+                {{ $t('security.changeMethod.switchTo', { method: $t(`security.methodLabel.${otherMethod}`) }) }}
+              </v-btn>
+            </div>
+          </template>
+
           <v-divider />
 
           <div>
@@ -417,5 +460,14 @@ async function regenerate() {
         </div>
       </v-card-text>
     </v-card>
+
+    <AppConfirmDialog
+      v-model="changeDialog"
+      :title="$t('security.changeMethod.confirmTitle')"
+      :text="$t('security.changeMethod.confirmText', { method: $t(`security.methodLabel.${otherMethod}`) })"
+      :confirm-label="$t('security.changeMethod.confirmLabel')"
+      confirm-color="primary"
+      @confirm="changeMethod"
+    />
   </div>
 </template>

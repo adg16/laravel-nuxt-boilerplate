@@ -26,8 +26,8 @@ async function load() {
   try {
     settings.value = await settingsApi.list()
     for (const setting of settings.value) edited[setting.key] = setting.value
-  } catch {
-    notify(t('common.genericError'), 'error')
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
   } finally {
     loading.value = false
   }
@@ -78,8 +78,7 @@ async function save(setting: Setting) {
     // Keep the cached app config in sync so dependent screens react at once.
     if (setting.key === 'user_creation_mode') await config.fetch()
   } catch (e) {
-    const err = e as { data?: { message?: string } }
-    notify(err.data?.message ?? t('common.genericError'), 'error')
+    notify(apiErrorMessage(e), 'error')
   } finally {
     savingKey.value = null
   }

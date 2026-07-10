@@ -14,6 +14,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 use Laravel\Fortify\Fortify;
 use Laravel\Fortify\RecoveryCode;
+use PragmaRX\Google2FA\Google2FA;
 use Tests\TestCase;
 
 class EmailTwoFactorTest extends TestCase
@@ -91,6 +92,24 @@ class EmailTwoFactorTest extends TestCase
             )),
             'two_factor_confirmed_at' => now(),
         ])->save();
+    }
+
+    private function otp(string $secret): string
+    {
+        return app(Google2FA::class)->getCurrentOtp($secret);
+    }
+
+    /**
+     * Enroll + confirm TOTP through the endpoints (the user must already be
+     * logged in), returning the plaintext secret.
+     */
+    private function enrollTotp(User $user): string
+    {
+        $this->postJson('/api/user/two-factor-authentication')->assertOk();
+        $secret = Fortify::currentEncrypter()->decrypt($user->fresh()->two_factor_secret);
+        $this->postJson('/api/user/confirmed-two-factor-authentication', ['code' => $this->otp($secret)])->assertOk();
+
+        return $secret;
     }
 
     private function capturedCode(User $user): string
@@ -178,6 +197,72 @@ class EmailTwoFactorTest extends TestCase
         $this->postJson('/api/two-factor-email-challenge', ['recovery_code' => $recovery[0]])
             ->assertOk()
             ->assertJsonPath('email', $user->email);
+    }
+
+    public function test_switching_from_email_to_totp_requires_reconfirmation(): void
+    {
+        $this->setMode(TwoFactorMode::Optional);
+        $this->setMethods(TwoFactorMethodPolicy::Both);
+        $user = User::factory()->create(['password' => bcrypt('password')]);
+        $this->loginAs($user);
+        $this->enrollEmail($user);
+
+        // Start the switch: enabling TOTP mints a secret the user hasn't verified,
+        // so 2FA must drop back to unconfirmed (not silently "enabled via TOTP").
+        $this->postJson('/api/user/two-factor-authentication')->assertOk();
+        $mid = $user->fresh();
+        $this->assertNull($mid->two_factor_confirmed_at);
+        $this->assertFalse($mid->hasTwoFactorEnabled());
+
+        $secret = Fortify::currentEncrypter()->decrypt($mid->two_factor_secret);
+        $this->postJson('/api/user/confirmed-two-factor-authentication', ['code' => $this->otp($secret)])->assertOk();
+
+        $done = $user->fresh();
+        $this->assertTrue($done->hasTwoFactorEnabled());
+        $this->assertSame('totp', $done->two_factor_method);
+    }
+
+    public function test_switching_from_totp_to_email_requires_reconfirmation(): void
+    {
+        $this->setMode(TwoFactorMode::Optional);
+        $this->setMethods(TwoFactorMethodPolicy::Both);
+        $user = User::factory()->create(['password' => bcrypt('password')]);
+        $this->loginAs($user);
+        $this->enrollTotp($user);
+        $this->assertSame('totp', $user->fresh()->two_factor_method);
+
+        // Start the switch: email enrollment tears down the TOTP secret and drops
+        // to unconfirmed until the emailed code is verified.
+        Notification::fake();
+        $this->postJson('/api/user/two-factor-email')->assertOk();
+        $mid = $user->fresh();
+        $this->assertNull($mid->two_factor_secret);
+        $this->assertNull($mid->two_factor_confirmed_at);
+        $this->assertFalse($mid->hasTwoFactorEnabled());
+
+        $this->postJson('/api/user/two-factor-email/confirm', ['code' => $this->capturedCode($user)])->assertOk();
+
+        $done = $user->fresh();
+        $this->assertTrue($done->hasTwoFactorEnabled());
+        $this->assertSame('email', $done->two_factor_method);
+    }
+
+    public function test_redundant_totp_enable_keeps_confirmation(): void
+    {
+        $this->setMode(TwoFactorMode::Optional);
+        $user = User::factory()->create(['password' => bcrypt('password')]);
+        $this->loginAs($user);
+        $this->enrollTotp($user);
+
+        $confirmedAt = $user->fresh()->two_factor_confirmed_at;
+        $this->assertNotNull($confirmedAt);
+
+        // A second enable on a user who already has a secret must not un-confirm
+        // them (Fortify mints no new secret, so there's nothing to re-verify).
+        $this->postJson('/api/user/two-factor-authentication')->assertOk();
+
+        $this->assertEquals($confirmedAt, $user->fresh()->two_factor_confirmed_at);
+        $this->assertTrue($user->fresh()->hasTwoFactorEnabled());
     }
 
     public function test_policy_totp_only_blocks_email_enrollment(): void

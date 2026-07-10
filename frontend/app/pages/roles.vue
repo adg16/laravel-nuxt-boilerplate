@@ -41,8 +41,8 @@ async function load() {
     const [rolesData, permissionsData] = await Promise.all([rolesApi.list(), permissionsApi.list()])
     roles.value = rolesData
     permissions.value = permissionsData
-  } catch {
-    notify(t('common.genericError'), 'error')
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
   } finally {
     loading.value = false
   }
@@ -112,8 +112,7 @@ async function onDelete() {
     deleteDialog.value = false
     await load()
   } catch (e) {
-    const err = e as { data?: { message?: string } }
-    notify(err.data?.message ?? t('common.genericError'), 'error')
+    notify(apiErrorMessage(e), 'error')
   } finally {
     deleting.value = false
   }

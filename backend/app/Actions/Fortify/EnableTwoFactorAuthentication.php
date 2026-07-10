@@ -30,8 +30,22 @@ class EnableTwoFactorAuthentication extends FortifyEnableTwoFactorAuthentication
             __('auth.two_factor_method_not_allowed'),
         );
 
+        // Fortify only mints a new secret when there isn't one already (or on
+        // force). When it does — including a switch *from* email, where the user
+        // carries a stale `two_factor_confirmed_at` — that secret is unverified,
+        // so drop the confirmation to force a re-confirm. Without this the new
+        // secret would read as "enabled" and lock the user out at next sign-in.
+        // A redundant enable on a confirmed TOTP user (secret present) leaves the
+        // confirmation intact.
+        $mintedSecret = empty($user->two_factor_secret) || $force;
+
         parent::__invoke($user, $force);
 
-        $user->forceFill(['two_factor_method' => TwoFactorMethod::Totp->value])->save();
+        $attributes = ['two_factor_method' => TwoFactorMethod::Totp->value];
+        if ($mintedSecret) {
+            $attributes['two_factor_confirmed_at'] = null;
+        }
+
+        $user->forceFill($attributes)->save();
     }
 }

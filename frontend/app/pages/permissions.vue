@@ -8,7 +8,6 @@ definePageMeta({
   permission: PERMISSIONS.PermissionsView
 })
 
-const { t } = useI18n()
 const { notify } = useSnackbar()
 const { list } = usePermissions()
 const { fullLabel } = usePermissionLabels()
@@ -20,8 +19,8 @@ async function load() {
   loading.value = true
   try {
     permissions.value = await list()
-  } catch {
-    notify(t('common.genericError'), 'error')
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
   } finally {
     loading.value = false
   }
