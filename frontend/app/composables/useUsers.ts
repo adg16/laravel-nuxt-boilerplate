@@ -24,6 +24,7 @@ export function useUsers() {
     create: (body: CreateUserPayload) => api<User>('/users', { method: 'POST', body }),
     update: (id: number, body: UserPayload) => api<User>(`/users/${id}`, { method: 'PUT', body }),
     remove: (id: number) => api<{ message: string }>(`/users/${id}`, { method: 'DELETE' }),
-    resendInvite: (id: number) => api<{ message: string }>(`/users/${id}/resend-invite`, { method: 'POST' })
+    resendInvite: (id: number) => api<{ message: string }>(`/users/${id}/resend-invite`, { method: 'POST' }),
+    resetTwoFactor: (id: number) => api<{ message: string }>(`/users/${id}/two-factor`, { method: 'DELETE' })
   }
 }

@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Enums\Setting;
+use App\Enums\TwoFactorMethodPolicy;
+use App\Enums\TwoFactorMode;
 use App\Enums\UserCreationMode;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -54,6 +56,22 @@ class Settings
     public function userCreationMode(): UserCreationMode
     {
         return UserCreationMode::from($this->string(Setting::UserCreationMode));
+    }
+
+    /**
+     * Convenience accessor returning the typed two-factor mode.
+     */
+    public function twoFactorMode(): TwoFactorMode
+    {
+        return TwoFactorMode::from($this->string(Setting::TwoFactorMode));
+    }
+
+    /**
+     * Convenience accessor returning which 2FA methods users may enroll.
+     */
+    public function twoFactorMethodPolicy(): TwoFactorMethodPolicy
+    {
+        return TwoFactorMethodPolicy::from($this->string(Setting::TwoFactorMethods));
     }
 
     /**

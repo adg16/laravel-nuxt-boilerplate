@@ -16,6 +16,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Laravel\Fortify\Actions\DisableTwoFactorAuthentication as FortifyDisableTwoFactorAuthentication;
 
 class UserController extends Controller
 {
@@ -103,6 +104,25 @@ class UserController extends Controller
         $user->delete();
 
         return response()->json(['message' => __('management.user_deleted')]);
+    }
+
+    /**
+     * Clear a user's two-factor setup — the lockout recovery for a user who lost
+     * their authenticator (and their recovery codes). Uses Fortify's *base*
+     * disable action to bypass our required-mode self-disable guard: an admin
+     * reset is legitimate. When two_factor_mode is Required, the user simply
+     * re-enrolls on their next sign-in (the forced-setup gate takes over).
+     */
+    public function resetTwoFactor(User $user): JsonResponse
+    {
+        $this->guardProtected($user);
+
+        // Base disable action clears secret/recovery/confirmed for either method;
+        // clearTwoFactorMethod nulls our extra column too.
+        (new FortifyDisableTwoFactorAuthentication)($user);
+        $user->clearTwoFactorMethod();
+
+        return response()->json(['message' => __('management.two_factor_reset')]);
     }
 
     public function resendInvite(User $user, InvitationService $invitations): JsonResponse

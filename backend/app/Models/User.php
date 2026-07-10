@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\TwoFactorMethod;
 use App\Notifications\QueuedResetPassword;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -10,14 +11,15 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes', 'two_factor_method'])]
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasRoles, Notifiable;
+    use HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
 
     /**
      * Get the attributes that should be cast.
@@ -46,6 +48,38 @@ class User extends Authenticatable
     public function isSystem(): bool
     {
         return $this->email === config('app.system_user_email');
+    }
+
+    /**
+     * The second factor the user enrolled, if any. Fortify only tracks a TOTP
+     * secret; this column distinguishes email-based 2FA (which has no secret).
+     */
+    public function twoFactorMethod(): ?TwoFactorMethod
+    {
+        return $this->two_factor_method ? TwoFactorMethod::from($this->two_factor_method) : null;
+    }
+
+    /**
+     * Whether the user has an active (confirmed) second factor — of *either*
+     * method. Use this instead of Fortify's TwoFactorAuthenticatable::
+     * hasEnabledTwoFactorAuthentication(), which is TOTP-only (it requires a
+     * `two_factor_secret` an email user never has). `two_factor_confirmed_at` is
+     * set by confirming either method, so it's the unified signal.
+     */
+    public function hasTwoFactorEnabled(): bool
+    {
+        return ! is_null($this->two_factor_confirmed_at);
+    }
+
+    /**
+     * Null the enrolled method. The single place that column is reset — called
+     * by both the self-disable action and the admin reset (Fortify's base
+     * disable action clears the secret/recovery/confirmed columns but not this
+     * one).
+     */
+    public function clearTwoFactorMethod(): void
+    {
+        $this->forceFill(['two_factor_method' => null])->save();
     }
 
     /**

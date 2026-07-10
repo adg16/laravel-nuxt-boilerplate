@@ -8,7 +8,7 @@ const { apiMock } = vi.hoisted(() => ({ apiMock: vi.fn() }))
 mockNuxtImport('useApi', () => () => apiMock)
 
 function userWith(roles: string[], permissions: string[]): User {
-  return { id: 1, name: 'A', email: 'a@example.com', roles, permissions, is_protected: false, is_verified: true, created_at: '' }
+  return { id: 1, name: 'A', email: 'a@example.com', roles, permissions, is_protected: false, is_verified: true, two_factor_enabled: false, created_at: '' }
 }
 
 describe('useAuthz', () => {

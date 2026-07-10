@@ -211,6 +211,12 @@ async function handleLogout() {
             <v-divider />
 
             <v-list-item
+              to="/security"
+              prepend-icon="mdi-shield-lock-outline"
+              :title="$t('nav.security')"
+            />
+
+            <v-list-item
               prepend-icon="mdi-logout"
               :title="$t('common.logout')"
               @click="handleLogout"

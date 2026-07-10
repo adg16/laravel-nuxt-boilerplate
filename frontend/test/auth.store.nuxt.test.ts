@@ -20,6 +20,7 @@ const fakeUser: User = {
   permissions: [],
   is_protected: true,
   is_verified: true,
+  two_factor_enabled: false,
   created_at: '2026-01-01T00:00:00.000000Z'
 }
 
@@ -33,11 +34,35 @@ describe('auth store', () => {
     apiMock.mockResolvedValueOnce(fakeUser)
     const auth = useAuthStore()
 
-    await auth.login({ email: 'admin@example.com', password: 'password' })
+    const result = await auth.login({ email: 'admin@example.com', password: 'password' })
 
     expect(apiMock).toHaveBeenCalledWith('/login', {
       method: 'POST',
       body: { email: 'admin@example.com', password: 'password' }
+    })
+    expect(result).toEqual({ twoFactor: false, method: 'totp' })
+    expect(auth.user).toEqual(fakeUser)
+  })
+
+  it('login signals a 2FA challenge and does not set the user', async () => {
+    apiMock.mockResolvedValueOnce({ two_factor: true, two_factor_method: 'email' })
+    const auth = useAuthStore()
+
+    const result = await auth.login({ email: 'admin@example.com', password: 'password' })
+
+    expect(result).toEqual({ twoFactor: true, method: 'email' })
+    expect(auth.user).toBeNull()
+  })
+
+  it('twoFactorChallenge posts the code and stores the user', async () => {
+    apiMock.mockResolvedValueOnce(fakeUser)
+    const auth = useAuthStore()
+
+    await auth.twoFactorChallenge({ code: '123456' })
+
+    expect(apiMock).toHaveBeenCalledWith('/two-factor-challenge', {
+      method: 'POST',
+      body: { code: '123456' }
     })
     expect(auth.user).toEqual(fakeUser)
   })

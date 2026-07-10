@@ -19,4 +19,16 @@ export default defineNuxtRouteMiddleware((to) => {
   if (auth.user && typeof permission === 'string' && !useAuthz().can(permission)) {
     return navigateTo('/')
   }
+
+  // Required-mode 2FA: a signed-in user who hasn't enrolled is confined to the
+  // Security page until they do (mirrors the backend's EnsureTwoFactorEnrolled
+  // 403). The setup page itself must stay reachable.
+  if (
+    auth.user
+    && !auth.user.two_factor_enabled
+    && useConfigStore().twoFactorMode === 'required'
+    && to.path !== '/security'
+  ) {
+    return navigateTo('/security')
+  }
 })

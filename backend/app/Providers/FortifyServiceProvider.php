@@ -3,6 +3,9 @@
 namespace App\Providers;
 
 use App\Actions\Fortify\CreateNewUser;
+use App\Actions\Fortify\DisableTwoFactorAuthentication;
+use App\Actions\Fortify\EnableTwoFactorAuthentication;
+use App\Actions\Fortify\RedirectIfTwoFactorAuthenticatable;
 use App\Actions\Fortify\ResetUserPassword;
 use App\Http\Responses\LoginResponse;
 use App\Http\Responses\LogoutResponse;
@@ -13,11 +16,15 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Fortify\Actions\DisableTwoFactorAuthentication as FortifyDisableTwoFactorAuthentication;
+use Laravel\Fortify\Actions\EnableTwoFactorAuthentication as FortifyEnableTwoFactorAuthentication;
 use Laravel\Fortify\Contracts\FailedPasswordResetLinkRequestResponse;
 use Laravel\Fortify\Contracts\LoginResponse as LoginResponseContract;
 use Laravel\Fortify\Contracts\LogoutResponse as LogoutResponseContract;
+use Laravel\Fortify\Contracts\RedirectsIfTwoFactorAuthenticatable;
 use Laravel\Fortify\Contracts\RegisterResponse as RegisterResponseContract;
 use Laravel\Fortify\Contracts\SuccessfulPasswordResetLinkRequestResponse;
+use Laravel\Fortify\Contracts\TwoFactorLoginResponse as TwoFactorLoginResponseContract;
 use Laravel\Fortify\Fortify;
 
 class FortifyServiceProvider extends ServiceProvider
@@ -28,10 +35,25 @@ class FortifyServiceProvider extends ServiceProvider
         // defaults. Login/Register return the user; the two forgot-password
         // outcomes are made indistinguishable for anti-enumeration.
         $this->app->singleton(LoginResponseContract::class, LoginResponse::class);
+        // A completed two-factor challenge returns its own response type — bind
+        // it to the same user payload so the SPA gets the user (not Fortify's
+        // default empty 204) whether login was one-step or via a 2FA challenge.
+        $this->app->singleton(TwoFactorLoginResponseContract::class, LoginResponse::class);
         $this->app->singleton(RegisterResponseContract::class, RegisterResponse::class);
         $this->app->singleton(LogoutResponseContract::class, LogoutResponse::class);
         $this->app->singleton(SuccessfulPasswordResetLinkRequestResponse::class, PasswordResetLinkResponse::class);
         $this->app->singleton(FailedPasswordResetLinkRequestResponse::class, PasswordResetLinkResponse::class);
+
+        // Two-factor is registered unconditionally, but the `two_factor_mode`
+        // setting decides its behavior at runtime. Override the login-pipeline
+        // step so an Off setting skips the challenge, and the enroll action so
+        // an Off setting refuses new enrollment. (Bind the contract the pipeline
+        // resolves + Fortify's concrete enroll action.)
+        $this->app->scoped(RedirectsIfTwoFactorAuthenticatable::class, RedirectIfTwoFactorAuthenticatable::class);
+        $this->app->singleton(FortifyEnableTwoFactorAuthentication::class, EnableTwoFactorAuthentication::class);
+        // Required mode also can't be turned off from the account: refuse to
+        // disable an active setup while the setting demands 2FA.
+        $this->app->singleton(FortifyDisableTwoFactorAuthentication::class, DisableTwoFactorAuthentication::class);
     }
 
     public function boot(): void

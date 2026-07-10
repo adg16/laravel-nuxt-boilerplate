@@ -6,6 +6,7 @@ return [
     'invite_already_accepted' => 'This user has already accepted their invitation.',
     'cannot_delete_self' => 'You cannot delete your own account.',
     'cannot_modify_protected_user' => 'This account is protected and cannot be modified.',
+    'two_factor_reset' => 'Two-factor authentication has been reset for this user.',
 
     'role_deleted' => 'Role deleted.',
     'cannot_modify_super_admin_role' => 'The super administrator role cannot be modified.',

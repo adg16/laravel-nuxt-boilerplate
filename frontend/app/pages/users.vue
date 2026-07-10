@@ -37,6 +37,15 @@ function resendTooltip(user: User): string {
   return t('users.resendInvite')
 }
 
+// Resetting 2FA is the lockout recovery for a user who lost their authenticator;
+// only meaningful when they actually have it enabled, and never for protected
+// accounts — matches the backend guard.
+function resetTwoFactorTooltip(user: User): string {
+  if (user.is_protected) return t('users.protectedTooltip')
+  if (!user.two_factor_enabled) return t('users.noTwoFactor')
+  return t('users.resetTwoFactor')
+}
+
 const users = ref<User[]>([])
 const roleNames = ref<string[]>([])
 const loading = ref(true)
@@ -176,6 +185,32 @@ async function onDelete() {
     deleting.value = false
   }
 }
+
+// --- Reset two-factor ---
+const resetDialog = ref(false)
+const resetTarget = ref<User | null>(null)
+const resetting = ref(false)
+
+function openResetTwoFactor(user: User) {
+  resetTarget.value = user
+  resetDialog.value = true
+}
+
+async function onResetTwoFactor() {
+  if (!resetTarget.value) return
+  resetting.value = true
+  try {
+    const { message } = await usersApi.resetTwoFactor(resetTarget.value.id)
+    notify(message)
+    resetDialog.value = false
+    await load()
+  } catch (e) {
+    const err = e as { data?: { message?: string } }
+    notify(err.data?.message ?? t('common.genericError'), 'error')
+  } finally {
+    resetting.value = false
+  }
+}
 </script>
 
 <template>
@@ -294,6 +329,12 @@ async function onDelete() {
                 :tooltip="user.is_protected ? $t('users.protectedTooltip') : $t('common.edit')"
                 :disabled="user.is_protected"
                 @click="openEdit(user)"
+              />
+              <AppTableAction
+                icon="mdi-shield-refresh-outline"
+                :tooltip="resetTwoFactorTooltip(user)"
+                :disabled="user.is_protected || !user.two_factor_enabled"
+                @click="openResetTwoFactor(user)"
               />
               <AppTableAction
                 icon="mdi-delete-outline"
@@ -439,6 +480,15 @@ async function onDelete() {
       :confirm-label="$t('common.delete')"
       :loading="deleting"
       @confirm="onDelete"
+    />
+
+    <AppConfirmDialog
+      v-model="resetDialog"
+      :title="$t('users.resetTwoFactorConfirm.title')"
+      :text="$t('users.resetTwoFactorConfirm.text', { name: resetTarget?.name })"
+      :confirm-label="$t('users.resetTwoFactor')"
+      :loading="resetting"
+      @confirm="onResetTwoFactor"
     />
   </div>
 </template>

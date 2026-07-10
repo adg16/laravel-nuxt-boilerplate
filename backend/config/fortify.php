@@ -158,11 +158,23 @@ return [
     | by removing them from this array. You're free to only remove some of
     | these features or you can even remove all of these if you need to.
     |
-    | Only login/logout (always registered), registration, and password reset
-    | are enabled. Profile/password self-service is intentionally omitted —
-    | accounts are managed through the permissioned UserController, not by
-    | users editing themselves. Two-factor is off but ready: re-add
-    | `Features::twoFactorAuthentication(...)` (and its migration) to enable.
+    | Only login/logout (always registered), registration, password reset, and
+    | two-factor are enabled. Profile/password self-service is intentionally
+    | omitted — accounts are managed through the permissioned UserController,
+    | not by users editing themselves.
+    |
+    | Two-factor is registered here *unconditionally* (routes always exist).
+    | Whether it actually applies — off / optional / required — is a runtime
+    | decision read from the `two_factor_mode` setting at request time (see
+    | App\Actions\Fortify\RedirectIfTwoFactorAuthenticatable and
+    | EnsureTwoFactorEnrolled). Gating it via this config array instead would
+    | freeze at boot, since the prod entrypoint runs `config:cache`.
+    |
+    | `confirm => true` makes a user verify a TOTP code before 2FA activates
+    | (prevents self-lockout — only `two_factor_confirmed_at` users count as
+    | enabled). `confirmPassword => false` skips Fortify's `password.confirm`
+    | session gate on the manage endpoints (it would need a bespoke confirm-
+    | password flow in the headless SPA); flip it on for extra hardening.
     |
     */
 
@@ -172,7 +184,7 @@ return [
         // Features::emailVerification(),
         // Features::updateProfileInformation(),
         // Features::updatePasswords(),
-        // Features::twoFactorAuthentication(['confirm' => true, 'confirmPassword' => true]),
+        Features::twoFactorAuthentication(['confirm' => true, 'confirmPassword' => false]),
     ],
 
 ];

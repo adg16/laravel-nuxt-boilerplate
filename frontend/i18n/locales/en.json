@@ -7,14 +7,16 @@
     "confirm": "Confirm",
     "save": "Save",
     "edit": "Edit",
-    "delete": "Delete"
+    "delete": "Delete",
+    "copy": "Copy"
   },
   "nav": {
     "dashboard": "Dashboard",
     "users": "Users",
     "roles": "Roles",
     "permissions": "Permissions",
-    "settings": "Settings"
+    "settings": "Settings",
+    "security": "Security"
   },
   "a11y": {
     "toggleMenu": "Toggle menu",
@@ -92,6 +94,21 @@
       "invalidLinkText": "This link is missing information. Please ask an administrator for a new invitation.",
       "success": "Your account is ready. Please sign in.",
       "expired": "This invitation is invalid or has expired."
+    },
+    "twoFactor": {
+      "title": "Two-factor authentication",
+      "subtitle": "Enter the code from your authenticator app.",
+      "recoverySubtitle": "Enter one of your recovery codes.",
+      "codeLabel": "Authentication code",
+      "recoveryLabel": "Recovery code",
+      "submit": "Verify",
+      "useRecovery": "Use a recovery code instead",
+      "useCode": "Use an authenticator code instead",
+      "invalid": "The code is invalid. Please try again.",
+      "email": {
+        "subtitle": "Enter the code we emailed you.",
+        "resend": "Resend code"
+      }
     }
   },
   "dashboard": {
@@ -124,9 +141,15 @@
     "verified": "Verified",
     "pending": "Pending",
     "alreadyAccepted": "Invitation already accepted.",
+    "resetTwoFactor": "Reset two-factor",
+    "noTwoFactor": "This user doesn't have two-factor enabled.",
     "delete": {
       "title": "Delete user",
       "text": "Delete {name}? This cannot be undone."
+    },
+    "resetTwoFactorConfirm": {
+      "title": "Reset two-factor authentication",
+      "text": "Reset two-factor for {name}? Their current authenticator and recovery codes stop working, and they'll set it up again on next sign-in."
     }
   },
   "roles": {
@@ -161,6 +184,14 @@
       "registration_enabled": {
         "label": "Public registration",
         "description": "Allow people to create their own account via the sign-up endpoint."
+      },
+      "two_factor_mode": {
+        "label": "Two-factor authentication",
+        "description": "Require a time-based one-time code at sign-in, in addition to a password."
+      },
+      "two_factor_methods": {
+        "label": "Allowed two-factor methods",
+        "description": "Which second factor users may set up. Authenticator apps are more secure than email."
       }
     },
     "options": {
@@ -168,8 +199,65 @@
         "choice": "Let the admin choose per user",
         "invite": "Always send an email invitation",
         "set_password": "Admin sets the password"
+      },
+      "two_factor_mode": {
+        "off": "Off — nobody uses two-factor",
+        "optional": "Optional — users may enable it themselves",
+        "required": "Required — everyone must set it up"
+      },
+      "two_factor_methods": {
+        "totp": "Authenticator app only",
+        "email": "Email code only",
+        "both": "Let users choose (app or email)"
       }
     }
+  },
+  "security": {
+    "subtitle": "Manage two-factor authentication for your account.",
+    "description": "Add an extra layer of protection when you sign in.",
+    "requiredHint": "Two-factor authentication is required. Set it up below to continue using the app.",
+    "unavailable": "Two-factor authentication is currently disabled by an administrator.",
+    "enableIntro": "When enabled, you'll enter a one-time code each time you sign in.",
+    "enable": "Enable two-factor",
+    "disable": "Disable two-factor",
+    "disableBlocked": "Two-factor authentication is required and can't be turned off.",
+    "confirm": "Confirm & activate",
+    "card": {
+      "title": "Two-factor authentication",
+      "enabled": "Enabled — a code is required at sign-in.",
+      "enabledVia": "Enabled via {method} — a code is required at sign-in.",
+      "disabled": "Not enabled."
+    },
+    "method": {
+      "title": "Method",
+      "totpHint": "Use an authenticator app to generate codes offline — more secure.",
+      "emailHint": "Receive a one-time code by email each time you sign in."
+    },
+    "methodLabel": {
+      "totp": "Authenticator app",
+      "email": "Email"
+    },
+    "email": {
+      "enrollTitle": "Check your email",
+      "enrollHint": "We sent a verification code to {email}. Enter it below to finish setup.",
+      "resend": "Resend code",
+      "resent": "A new code has been sent to your email."
+    },
+    "scanTitle": "Scan the QR code",
+    "scanHint": "Scan this with an authenticator app (Google Authenticator, 1Password, Authy…), or enter the key manually.",
+    "qrAlt": "Two-factor QR code",
+    "secretLabel": "Setup key",
+    "confirmTitle": "Confirm the code",
+    "recoveryTitle": "Recovery codes",
+    "recoveryHint": "Store these somewhere safe. Each code can be used once to sign in if you lose your device.",
+    "recoveryCodesTitle": "Recovery codes",
+    "recoveryCodesHint": "Each code works once. Regenerating replaces all existing codes.",
+    "recoveryCopied": "Recovery codes copied.",
+    "showRecovery": "Show recovery codes",
+    "regenerate": "Regenerate codes",
+    "enabledToast": "Two-factor authentication is now enabled.",
+    "disabledToast": "Two-factor authentication has been disabled.",
+    "recoveryRegenerated": "New recovery codes generated."
   },
   "permissions": {
     "subtitle": "The permissions your code enforces, and the roles that grant them.",

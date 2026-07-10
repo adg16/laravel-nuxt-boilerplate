@@ -18,6 +18,8 @@ class ConfigController extends Controller
     {
         return response()->json([
             'userCreationMode' => $settings->userCreationMode()->value,
+            'twoFactorMode' => $settings->twoFactorMode()->value,
+            'twoFactorMethods' => $settings->twoFactorMethodPolicy()->value,
         ]);
     }
 }

@@ -23,6 +23,12 @@ class UserResource extends JsonResource
             'is_protected' => $this->isProtected(),
             // Whether the user has accepted their invitation and set a password.
             'is_verified' => $this->isVerified(),
+            // Whether the user has an active (confirmed) two-factor setup —
+            // drives the Security page state and the required-mode gate. Covers
+            // both TOTP and email (see User::hasTwoFactorEnabled).
+            'two_factor_enabled' => $this->hasTwoFactorEnabled(),
+            // Which second factor is enrolled ('totp' | 'email'), or null.
+            'two_factor_method' => $this->twoFactorMethod()?->value,
             'created_at' => $this->created_at,
         ];
     }

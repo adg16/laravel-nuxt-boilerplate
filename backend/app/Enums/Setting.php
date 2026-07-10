@@ -19,6 +19,8 @@ enum Setting: string
 {
     case UserCreationMode = 'user_creation_mode';
     case RegistrationEnabled = 'registration_enabled';
+    case TwoFactorMode = 'two_factor_mode';
+    case TwoFactorMethods = 'two_factor_methods';
 
     /**
      * The one place a setting is described — type, default, group, and (for a
@@ -37,6 +39,18 @@ enum Setting: string
                 type: SettingType::Toggle,
                 default: (bool) config('users.registration_enabled', true),
                 group: 'authentication',
+            ),
+            self::TwoFactorMode => new SettingDefinition(
+                type: SettingType::Select,
+                default: TwoFactorMode::Off->value,
+                group: 'authentication',
+                options: TwoFactorMode::values(),
+            ),
+            self::TwoFactorMethods => new SettingDefinition(
+                type: SettingType::Select,
+                default: TwoFactorMethodPolicy::Totp->value,
+                group: 'authentication',
+                options: TwoFactorMethodPolicy::values(),
             ),
         };
     }

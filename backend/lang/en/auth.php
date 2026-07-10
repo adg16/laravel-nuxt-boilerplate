@@ -18,5 +18,9 @@ return [
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',
     'registration_disabled' => 'Registration is currently disabled.',
     'logged_out' => 'Logged out.',
+    'two_factor_setup_required' => 'Two-factor authentication must be enabled before you can continue.',
+    'two_factor_unavailable' => 'Two-factor authentication is not available.',
+    'two_factor_required' => 'Two-factor authentication is required and cannot be turned off.',
+    'two_factor_method_not_allowed' => 'That two-factor method is not allowed.',
 
 ];
