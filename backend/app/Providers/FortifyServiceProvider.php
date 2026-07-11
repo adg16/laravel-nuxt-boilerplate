@@ -78,6 +78,13 @@ class FortifyServiceProvider extends ServiceProvider
             $user = User::where('email', $request->email)->first();
 
             if ($user && Hash::check((string) $request->password, $user->password)) {
+                // Deactivated accounts can't sign in. Checked only after the
+                // password verifies, so this never leaks account state to someone
+                // without the correct credentials.
+                if (! $user->isActive()) {
+                    throw new AuthenticationException(__('auth.account_deactivated'));
+                }
+
                 return $user;
             }
 

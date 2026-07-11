@@ -56,8 +56,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function logout() {
-    await api('/logout', { method: 'POST' })
-    user.value = null
+    // Always clear client auth state, even if the request fails — a user who was
+    // deactivated mid-session is 403'd by EnsureActive on /logout, but they're
+    // effectively signed out already and must not be stranded on the page.
+    try {
+      await api('/logout', { method: 'POST' })
+    } finally {
+      user.value = null
+    }
   }
 
   // Self-service: update the signed-in user's own name/email. The API returns

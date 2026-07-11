@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\TwoFactorEmailChallengeController;
 use App\Http\Controllers\Api\TwoFactorEmailController;
 use App\Http\Controllers\Api\TwoFactorRecoveryController;
 use App\Http\Controllers\Api\UserController;
+use App\Http\Middleware\EnsureActive;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use Illuminate\Support\Facades\Route;
 
@@ -36,7 +37,10 @@ Route::middleware(['guest:'.config('fortify.guard'), 'throttle:two-factor-email'
     Route::post('/two-factor-email-challenge/resend', [TwoFactorEmailChallengeController::class, 'resend']);
 });
 
-Route::middleware('auth:sanctum')->group(function () {
+// EnsureActive cuts off a deactivated user's live session across the whole
+// authenticated surface (including /user), so an admin's deactivation takes
+// effect on the target's very next request.
+Route::middleware(['auth:sanctum', EnsureActive::class])->group(function () {
     // Always reachable so the SPA can hydrate, read UI config, and (when
     // two_factor_mode = required) reach the self-service enrollment flow. The
     // enrollment gate below must never cover these.
@@ -89,6 +93,8 @@ Route::middleware('auth:sanctum')->group(function () {
             Route::put('users/{user}', [UserController::class, 'update']);
             Route::delete('users/{user}', [UserController::class, 'destroy']);
             Route::delete('users/{user}/two-factor', [UserController::class, 'resetTwoFactor']);
+            Route::post('users/{user}/deactivate', [UserController::class, 'deactivate']);
+            Route::post('users/{user}/activate', [UserController::class, 'activate']);
             Route::post('users/{user}/resend-invite', [UserController::class, 'resendInvite']);
         });
 

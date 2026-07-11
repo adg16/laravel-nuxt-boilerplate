@@ -14,6 +14,7 @@ return [
     */
 
     'failed' => 'These credentials do not match our records.',
+    'account_deactivated' => 'This account has been deactivated. Contact an administrator.',
     'password' => 'The provided password is incorrect.',
     'password_updated' => 'Password updated.',
     'throttle' => 'Too many login attempts. Please try again in :seconds seconds.',

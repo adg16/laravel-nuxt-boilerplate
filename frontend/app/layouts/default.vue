@@ -82,8 +82,13 @@ onBeforeUnmount(() => {
 })
 
 async function handleLogout() {
-  await auth.logout()
-  router.push('/login')
+  // logout() always clears client state (even if the request 403s for a
+  // deactivated session), so redirect regardless of the request outcome.
+  try {
+    await auth.logout()
+  } finally {
+    router.push('/login')
+  }
 }
 </script>
 

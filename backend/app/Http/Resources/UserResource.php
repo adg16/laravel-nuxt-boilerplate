@@ -29,6 +29,9 @@ class UserResource extends JsonResource
             'is_protected' => $this->isProtected(),
             // Whether the user has accepted their invitation and set a password.
             'is_verified' => $this->isVerified(),
+            // Whether the account is active. Deactivated users can't sign in and
+            // are cut off from the API; the Users table exposes a toggle.
+            'is_active' => $this->isActive(),
             // Whether the user has an active (confirmed) two-factor setup —
             // drives the Security page state and the required-mode gate. Covers
             // both TOTP and email (see User::hasTwoFactorEnabled).

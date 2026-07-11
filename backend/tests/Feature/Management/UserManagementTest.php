@@ -207,6 +207,76 @@ class UserManagementTest extends TestCase
         $this->assertTrue($system->isProtected());
     }
 
+    public function test_admin_can_deactivate_and_reactivate_a_user(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $target = User::factory()->create()->assignRole('viewer');
+        $this->loginAs($admin);
+
+        $this->postJson("/api/users/{$target->id}/deactivate")
+            ->assertOk()
+            ->assertJsonStructure(['message']);
+        $this->assertFalse($target->fresh()->isActive());
+
+        $this->postJson("/api/users/{$target->id}/activate")
+            ->assertOk();
+        $this->assertTrue($target->fresh()->isActive());
+    }
+
+    public function test_a_user_cannot_deactivate_their_own_account(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $this->loginAs($admin);
+
+        $this->postJson("/api/users/{$admin->id}/deactivate")
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('user');
+
+        $this->assertTrue($admin->fresh()->isActive());
+    }
+
+    public function test_a_protected_account_cannot_be_deactivated(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $super = User::factory()->create()->assignRole('super-admin');
+        $this->loginAs($admin);
+
+        $this->postJson("/api/users/{$super->id}/deactivate")
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('user');
+
+        $this->assertTrue($super->fresh()->isActive());
+    }
+
+    public function test_a_deactivated_user_cannot_log_in(): void
+    {
+        $user = User::factory()->create();
+        $user->deactivate();
+
+        $this->postJson('/api/login', ['email' => $user->email, 'password' => 'password'])
+            ->assertUnauthorized()
+            ->assertJsonPath('message', __('auth.account_deactivated'));
+    }
+
+    public function test_a_live_session_is_cut_off_once_the_user_is_deactivated(): void
+    {
+        $user = User::factory()->create()->assignRole('viewer');
+        $this->loginAs($user);
+
+        // Session is live and hydrating fine.
+        $this->getJson('/api/user')->assertOk();
+
+        $user->deactivate();
+
+        // Drop the memoized guard so the next request re-resolves the (now
+        // deactivated) user rather than the cached one (see CLAUDE.md).
+        $this->app->forgetInstance('auth');
+
+        $this->getJson('/api/user')
+            ->assertForbidden()
+            ->assertJsonPath('code', 'account_deactivated');
+    }
+
     public function test_a_super_admin_user_cannot_be_edited(): void
     {
         $admin = User::factory()->create()->assignRole('admin');

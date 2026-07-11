@@ -45,6 +45,15 @@ function resetTwoFactorTooltip(user: User): string {
   return t('users.resetTwoFactor')
 }
 
+// Deactivating cuts off a user's access (and blocks their next sign-in) without
+// deleting them; you can't do it to yourself or a protected account — matches
+// the backend guard.
+function activationTooltip(user: User): string {
+  if (user.is_protected) return t('users.protectedTooltip')
+  if (user.id === auth.user?.id) return t('users.cannotDeactivateSelf')
+  return user.is_active ? t('users.deactivate') : t('users.activate')
+}
+
 const users = ref<User[]>([])
 const roleNames = ref<string[]>([])
 const loading = ref(true)
@@ -207,6 +216,47 @@ async function onResetTwoFactor() {
     resetting.value = false
   }
 }
+
+// --- Activate / deactivate ---
+// Reactivation is harmless, so it applies immediately; deactivation cuts off
+// access, so it goes through a confirm dialog first.
+const deactivateDialog = ref(false)
+const deactivateTarget = ref<User | null>(null)
+const deactivating = ref(false)
+
+function toggleActivation(user: User) {
+  if (user.is_active) {
+    deactivateTarget.value = user
+    deactivateDialog.value = true
+  } else {
+    activate(user)
+  }
+}
+
+async function activate(user: User) {
+  try {
+    const { message } = await usersApi.activate(user.id)
+    notify(message)
+    await load()
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
+  }
+}
+
+async function onDeactivate() {
+  if (!deactivateTarget.value) return
+  deactivating.value = true
+  try {
+    const { message } = await usersApi.deactivate(deactivateTarget.value.id)
+    notify(message)
+    deactivateDialog.value = false
+    await load()
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
+  } finally {
+    deactivating.value = false
+  }
+}
 </script>
 
 <template>
@@ -299,15 +349,26 @@ async function onResetTwoFactor() {
                 class="text-medium-emphasis"
               >—</span>
             </td>
-            <td>
-              <v-chip
-                :color="user.is_verified ? 'success' : 'warning'"
-                :prepend-icon="user.is_verified ? 'mdi-check-circle-outline' : 'mdi-clock-outline'"
-                size="small"
-                variant="tonal"
-              >
-                {{ user.is_verified ? $t('users.verified') : $t('users.pending') }}
-              </v-chip>
+            <td class="py-2">
+              <div class="d-flex flex-wrap ga-1">
+                <v-chip
+                  v-if="!user.is_active"
+                  color="error"
+                  prepend-icon="mdi-account-off-outline"
+                  size="small"
+                  variant="tonal"
+                >
+                  {{ $t('users.deactivated') }}
+                </v-chip>
+                <v-chip
+                  :color="user.is_verified ? 'success' : 'warning'"
+                  :prepend-icon="user.is_verified ? 'mdi-check-circle-outline' : 'mdi-clock-outline'"
+                  size="small"
+                  variant="tonal"
+                >
+                  {{ user.is_verified ? $t('users.verified') : $t('users.pending') }}
+                </v-chip>
+              </div>
             </td>
             <td
               v-if="canManage"
@@ -330,6 +391,12 @@ async function onResetTwoFactor() {
                 :tooltip="resetTwoFactorTooltip(user)"
                 :disabled="user.is_protected || !user.two_factor_enabled"
                 @click="openResetTwoFactor(user)"
+              />
+              <AppTableAction
+                :icon="user.is_active ? 'mdi-account-off-outline' : 'mdi-account-check-outline'"
+                :tooltip="activationTooltip(user)"
+                :disabled="user.is_protected || user.id === auth.user?.id"
+                @click="toggleActivation(user)"
               />
               <AppTableAction
                 icon="mdi-delete-outline"
@@ -484,6 +551,15 @@ async function onResetTwoFactor() {
       :confirm-label="$t('users.resetTwoFactor')"
       :loading="resetting"
       @confirm="onResetTwoFactor"
+    />
+
+    <AppConfirmDialog
+      v-model="deactivateDialog"
+      :title="$t('users.deactivateConfirm.title')"
+      :text="$t('users.deactivateConfirm.text', { name: deactivateTarget?.name })"
+      :confirm-label="$t('users.deactivate')"
+      :loading="deactivating"
+      @confirm="onDeactivate"
     />
   </div>
 </template>

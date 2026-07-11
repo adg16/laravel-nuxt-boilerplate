@@ -125,6 +125,36 @@ class UserController extends Controller
         return response()->json(['message' => __('management.two_factor_reset')]);
     }
 
+    /**
+     * Deactivate a user — they can no longer sign in and their live session is
+     * cut off on its next request (App\Http\Middleware\EnsureActive). You can't
+     * deactivate yourself (a lockout footgun) or a protected account.
+     */
+    public function deactivate(Request $request, User $user): JsonResponse
+    {
+        if ($user->is($request->user())) {
+            throw ValidationException::withMessages([
+                'user' => [__('management.cannot_deactivate_self')],
+            ]);
+        }
+
+        $this->guardProtected($user);
+
+        $user->deactivate();
+
+        return response()->json(['message' => __('management.user_deactivated')]);
+    }
+
+    /** Reactivate a previously deactivated user. */
+    public function activate(User $user): JsonResponse
+    {
+        $this->guardProtected($user);
+
+        $user->activate();
+
+        return response()->json(['message' => __('management.user_activated')]);
+    }
+
     public function resendInvite(User $user, InvitationService $invitations): JsonResponse
     {
         // Once the invite is accepted (the user is verified) there's nothing to

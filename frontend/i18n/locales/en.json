@@ -142,9 +142,13 @@
     "resendInvite": "Resend invite",
     "inviteHint": "The user will receive an email with a link to set their password.",
     "cannotDeleteSelf": "You can't delete your own account.",
+    "cannotDeactivateSelf": "You can't deactivate your own account.",
     "protectedTooltip": "This account is protected and can't be modified.",
     "verified": "Verified",
     "pending": "Pending",
+    "deactivated": "Deactivated",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
     "alreadyAccepted": "Invitation already accepted.",
     "resetTwoFactor": "Reset two-factor",
     "noTwoFactor": "This user doesn't have two-factor enabled.",
@@ -155,6 +159,10 @@
     "resetTwoFactorConfirm": {
       "title": "Reset two-factor authentication",
       "text": "Reset two-factor for {name}? Their current authenticator and recovery codes stop working, and they'll set it up again on next sign-in."
+    },
+    "deactivateConfirm": {
+      "title": "Deactivate user",
+      "text": "Deactivate {name}? They'll be signed out and blocked from signing in until reactivated."
     }
   },
   "roles": {

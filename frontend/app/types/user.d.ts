@@ -18,6 +18,9 @@ export interface User {
   is_protected: boolean
   // Whether the user has accepted their invitation and set a password.
   is_verified: boolean
+  // Whether the account is active. Deactivated users can't sign in and are cut
+  // off from the API; the Users table exposes an activate/deactivate toggle.
+  is_active: boolean
   // Whether the user has an active (confirmed) two-factor setup. Drives the
   // Security page state and the required-mode enrollment gate.
   two_factor_enabled: boolean

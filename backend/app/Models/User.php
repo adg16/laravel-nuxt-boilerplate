@@ -61,6 +61,7 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'deactivated_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -135,6 +136,28 @@ class User extends Authenticatable
     public function isProtected(): bool
     {
         return $this->isSystem() || $this->hasRole('super-admin');
+    }
+
+    /**
+     * Whether the account is active — i.e. not deactivated. Deactivated users
+     * can't sign in (blocked in FortifyServiceProvider::authenticateUsing) and
+     * any live session is cut off (App\Http\Middleware\EnsureActive).
+     */
+    public function isActive(): bool
+    {
+        return is_null($this->deactivated_at);
+    }
+
+    /** Deactivate the account (no-op if already deactivated). */
+    public function deactivate(): void
+    {
+        $this->forceFill(['deactivated_at' => now()])->save();
+    }
+
+    /** Reactivate the account (no-op if already active). */
+    public function activate(): void
+    {
+        $this->forceFill(['deactivated_at' => null])->save();
     }
 
     /**
