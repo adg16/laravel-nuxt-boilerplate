@@ -20,8 +20,8 @@
     "settings": "Settings",
     "security": "Security",
     "profile": "Profile",
-    "pinMenu": "Pin menu",
-    "unpinMenu": "Unpin menu"
+    "pinMenu": "Pin Menu",
+    "unpinMenu": "Unpin Menu"
   },
   "a11y": {
     "toggleMenu": "Toggle menu",

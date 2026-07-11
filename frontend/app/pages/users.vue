@@ -411,132 +411,111 @@ async function onDeactivate() {
     </v-card>
 
     <!-- Invite / edit dialog -->
-    <v-dialog
+    <AppFormDialog
       v-model="dialog"
-      max-width="520"
-      :persistent="saving"
+      :title="editing ? $t('users.edit') : $t('users.new')"
+      icon="mdi-account-outline"
+      :saving="saving"
+      :submit-label="editing ? $t('common.save') : (isSetPassword ? $t('users.create') : $t('users.sendInvite'))"
+      @submit="onSubmit"
     >
-      <v-card>
-        <v-card-title class="text-title-large px-6 pt-6 pb-2">
-          {{ editing ? $t('users.edit') : $t('users.new') }}
-        </v-card-title>
-        <v-card-text class="px-6 py-2">
-          <v-form
-            ref="formRef"
-            validate-on="submit"
-            class="d-flex flex-column ga-4"
-            @submit.prevent="onSubmit"
-          >
-            <v-text-field
-              v-model="state.name"
-              :label="$t('fields.name')"
-              :rules="nameRules"
-            />
-            <v-text-field
-              v-model="state.email"
-              type="email"
-              :label="$t('fields.email')"
-              :rules="emailRules"
-            />
+      <v-form
+        ref="formRef"
+        validate-on="submit"
+        class="d-flex flex-column ga-4"
+        @submit.prevent="onSubmit"
+      >
+        <v-text-field
+          v-model="state.name"
+          :label="$t('fields.name')"
+          :rules="nameRules"
+        />
+        <v-text-field
+          v-model="state.email"
+          type="email"
+          :label="$t('fields.email')"
+          :rules="emailRules"
+        />
 
-            <!-- Access method (create only). The toggle shows only when the app
+        <!-- Access method (create only). The toggle shows only when the app
                  lets the admin choose; otherwise the fixed mode drives the form. -->
-            <template v-if="!editing">
-              <div v-if="canChooseMethod">
-                <div class="text-label-large text-medium-emphasis mb-1">
-                  {{ $t('users.methodLabel') }}
-                </div>
-                <v-btn-toggle
-                  v-model="state.method"
-                  color="primary"
-                  variant="outlined"
-                  density="comfortable"
-                  divided
-                  mandatory
-                >
-                  <v-btn
-                    value="invite"
-                    prepend-icon="mdi-email-outline"
-                  >
-                    {{ $t('users.method.invite') }}
-                  </v-btn>
-                  <v-btn
-                    value="set_password"
-                    prepend-icon="mdi-lock-outline"
-                  >
-                    {{ $t('users.method.password') }}
-                  </v-btn>
-                </v-btn-toggle>
-              </div>
-
-              <PasswordInput
-                v-if="isSetPassword"
-                v-model="state.password"
-                :label="$t('fields.password')"
-                autocomplete="new-password"
-                placeholder="••••••••"
-                prepend-inner-icon="mdi-lock-outline"
-                :rules="passwordRules"
-              />
-              <PasswordInput
-                v-if="isSetPassword"
-                v-model="state.password_confirmation"
-                :label="$t('fields.confirmPassword')"
-                autocomplete="new-password"
-                placeholder="••••••••"
-                prepend-inner-icon="mdi-lock-outline"
-                :rules="confirmationRules"
-              />
-            </template>
-
-            <v-select
-              v-model="state.roles"
-              :items="roleNames"
-              :label="$t('fields.roles')"
-              multiple
-              chips
-              closable-chips
-            />
-
-            <p
-              v-if="!editing && !isSetPassword"
-              class="text-body-small text-medium-emphasis mb-0"
-            >
-              {{ $t('users.inviteHint') }}
-            </p>
-
-            <v-alert
-              v-if="error"
-              type="error"
-              variant="tonal"
+        <template v-if="!editing">
+          <div v-if="canChooseMethod">
+            <div class="text-label-large text-medium-emphasis mb-1">
+              {{ $t('users.methodLabel') }}
+            </div>
+            <v-btn-toggle
+              v-model="state.method"
+              color="primary"
+              variant="outlined"
               density="comfortable"
-              :text="error"
-            />
-          </v-form>
-        </v-card-text>
-        <v-card-actions class="px-6 pt-2 pb-6">
-          <v-spacer />
-          <v-btn
-            variant="text"
-            :disabled="saving"
-            @click="dialog = false"
-          >
-            {{ $t('common.cancel') }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            :loading="saving"
-            @click="onSubmit"
-          >
-            {{ editing ? $t('common.save') : (isSetPassword ? $t('users.create') : $t('users.sendInvite')) }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+              divided
+              mandatory
+            >
+              <v-btn
+                value="invite"
+                prepend-icon="mdi-email-outline"
+              >
+                {{ $t('users.method.invite') }}
+              </v-btn>
+              <v-btn
+                value="set_password"
+                prepend-icon="mdi-lock-outline"
+              >
+                {{ $t('users.method.password') }}
+              </v-btn>
+            </v-btn-toggle>
+          </div>
+
+          <PasswordInput
+            v-if="isSetPassword"
+            v-model="state.password"
+            :label="$t('fields.password')"
+            autocomplete="new-password"
+            placeholder="••••••••"
+            prepend-inner-icon="mdi-lock-outline"
+            :rules="passwordRules"
+          />
+          <PasswordInput
+            v-if="isSetPassword"
+            v-model="state.password_confirmation"
+            :label="$t('fields.confirmPassword')"
+            autocomplete="new-password"
+            placeholder="••••••••"
+            prepend-inner-icon="mdi-lock-outline"
+            :rules="confirmationRules"
+          />
+        </template>
+
+        <v-select
+          v-model="state.roles"
+          :items="roleNames"
+          :label="$t('fields.roles')"
+          multiple
+          chips
+          closable-chips
+        />
+
+        <p
+          v-if="!editing && !isSetPassword"
+          class="text-body-small text-medium-emphasis mb-0"
+        >
+          {{ $t('users.inviteHint') }}
+        </p>
+
+        <v-alert
+          v-if="error"
+          type="error"
+          variant="tonal"
+          density="comfortable"
+          :text="error"
+        />
+      </v-form>
+    </AppFormDialog>
 
     <AppConfirmDialog
       v-model="deleteDialog"
+      type="error"
       :title="$t('users.delete.title')"
       :text="$t('users.delete.text', { name: deleteTarget?.name })"
       :confirm-label="$t('common.delete')"
@@ -546,6 +525,7 @@ async function onDeactivate() {
 
     <AppConfirmDialog
       v-model="resetDialog"
+      type="warning"
       :title="$t('users.resetTwoFactorConfirm.title')"
       :text="$t('users.resetTwoFactorConfirm.text', { name: resetTarget?.name })"
       :confirm-label="$t('users.resetTwoFactor')"
@@ -555,6 +535,7 @@ async function onDeactivate() {
 
     <AppConfirmDialog
       v-model="deactivateDialog"
+      type="warning"
       :title="$t('users.deactivateConfirm.title')"
       :text="$t('users.deactivateConfirm.text', { name: deactivateTarget?.name })"
       :confirm-label="$t('users.deactivate')"

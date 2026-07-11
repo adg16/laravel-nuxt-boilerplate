@@ -229,84 +229,63 @@ async function onDelete() {
     </v-card>
 
     <!-- Create / edit dialog -->
-    <v-dialog
+    <AppFormDialog
       v-model="dialog"
-      max-width="640"
-      :persistent="saving"
+      :title="editing ? $t('roles.edit') : $t('roles.new')"
+      icon="mdi-shield-account-outline"
+      :max-width="640"
+      :saving="saving"
+      @submit="onSubmit"
     >
-      <v-card>
-        <v-card-title class="text-title-large px-6 pt-6 pb-2">
-          {{ editing ? $t('roles.edit') : $t('roles.new') }}
-        </v-card-title>
-        <v-card-text class="px-6 py-2">
-          <v-form
-            ref="formRef"
-            validate-on="submit"
-            @submit.prevent="onSubmit"
-          >
-            <v-text-field
-              v-model="state.name"
-              :label="$t('fields.roleName')"
-              :rules="nameRules"
-            />
+      <v-form
+        ref="formRef"
+        validate-on="submit"
+        @submit.prevent="onSubmit"
+      >
+        <v-text-field
+          v-model="state.name"
+          :label="$t('fields.roleName')"
+          :rules="nameRules"
+        />
 
-            <div class="text-title-small mt-4 mb-2">
-              {{ $t('roles.permissions') }}
-            </div>
-            <div
-              v-for="group in permissionGroups"
-              :key="group.name"
-              class="mb-3"
-            >
-              <div class="text-label-large text-medium-emphasis mb-1">
-                {{ resourceLabel(group.name) }}
-              </div>
-              <div class="d-flex flex-wrap ga-2">
-                <v-checkbox
-                  v-for="permission in group.items"
-                  :key="permission.id"
-                  v-model="state.permissions"
-                  :value="permission.name"
-                  :label="actionLabel(permission.name)"
-                  density="compact"
-                  hide-details
-                />
-              </div>
-            </div>
-
-            <v-alert
-              v-if="error"
-              type="error"
-              variant="tonal"
-              density="comfortable"
-              class="mt-2"
-              :text="error"
+        <div class="text-title-small mt-4 mb-2">
+          {{ $t('roles.permissions') }}
+        </div>
+        <div
+          v-for="group in permissionGroups"
+          :key="group.name"
+          class="mb-3"
+        >
+          <div class="text-label-large text-medium-emphasis mb-1">
+            {{ resourceLabel(group.name) }}
+          </div>
+          <div class="d-flex flex-wrap ga-2">
+            <v-checkbox
+              v-for="permission in group.items"
+              :key="permission.id"
+              v-model="state.permissions"
+              :value="permission.name"
+              :label="actionLabel(permission.name)"
+              density="compact"
+              hide-details
             />
-          </v-form>
-        </v-card-text>
-        <v-card-actions class="px-6 pt-2 pb-6">
-          <v-spacer />
-          <v-btn
-            variant="text"
-            :disabled="saving"
-            @click="dialog = false"
-          >
-            {{ $t('common.cancel') }}
-          </v-btn>
-          <v-btn
-            color="primary"
-            variant="flat"
-            :loading="saving"
-            @click="onSubmit"
-          >
-            {{ $t('common.save') }}
-          </v-btn>
-        </v-card-actions>
-      </v-card>
-    </v-dialog>
+          </div>
+        </div>
+
+        <v-alert
+          v-if="error"
+          type="error"
+          variant="tonal"
+          density="comfortable"
+          class="mt-2"
+          :text="error"
+        />
+      </v-form>
+    </AppFormDialog>
 
     <AppConfirmDialog
       v-model="deleteDialog"
+      type="error"
       :title="$t('roles.delete.title')"
       :text="$t('roles.delete.text', { name: deleteTarget?.name })"
       :confirm-label="$t('common.delete')"

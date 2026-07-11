@@ -462,10 +462,10 @@ async function regenerate() {
 
     <AppConfirmDialog
       v-model="changeDialog"
+      type="info"
       :title="$t('security.changeMethod.confirmTitle')"
       :text="$t('security.changeMethod.confirmText', { method: $t(`security.methodLabel.${otherMethod}`) })"
       :confirm-label="$t('security.changeMethod.confirmLabel')"
-      confirm-color="primary"
       @confirm="changeMethod"
     />
   </div>

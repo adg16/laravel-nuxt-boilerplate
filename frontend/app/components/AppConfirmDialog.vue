@@ -1,65 +1,73 @@
 <script setup lang="ts">
-// Generic confirm dialog for destructive actions. Open state is a v-model; the
-// parent runs the action in its `@confirm` handler and toggles `loading`.
+// Confirm dialog. `type` drives the semantic accent color + leading icon +
+// confirm-button color; the chrome is delegated to <AppDialogShell>. The parent
+// runs the action in its `@confirm` handler and toggles `loading`.
 //
 //   <AppConfirmDialog
 //     v-model="open"
+//     type="error"
 //     :title="$t('users.delete.title')"
 //     :text="$t('users.delete.text', { name })"
+//     :confirm-label="$t('common.delete')"
 //     :loading="deleting"
 //     @confirm="onDelete" />
+type ConfirmType = 'info' | 'warning' | 'error' | 'success' | 'general'
+
 const open = defineModel<boolean>({ required: true })
 
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   title: string
+  type?: ConfirmType
   text?: string
   confirmLabel?: string
   confirmColor?: string
   loading?: boolean
 }>(), {
+  type: 'general',
   text: undefined,
   confirmLabel: undefined,
-  confirmColor: 'error',
+  confirmColor: undefined,
   loading: false
 })
 
 defineEmits<{ confirm: [] }>()
+
+// `general` maps to the brand primary; the rest to Vuetify's semantic theme
+// colors so the accent, icon, and button all track the same token.
+const typeColor = computed(() => ({
+  info: 'info',
+  warning: 'warning',
+  error: 'error',
+  success: 'success',
+  general: 'primary'
+}[props.type]))
+
+const typeIcon = computed(() => ({
+  info: 'mdi-information-outline',
+  warning: 'mdi-alert-outline',
+  error: 'mdi-alert-circle-outline',
+  success: 'mdi-check-circle-outline',
+  general: 'mdi-help-circle-outline'
+}[props.type]))
 </script>
 
 <template>
-  <v-dialog
+  <AppDialogShell
     v-model="open"
-    max-width="480"
-    :persistent="loading"
+    :title="title"
+    :icon="typeIcon"
+    :accent-color="typeColor"
+    :max-width="480"
+    :action-label="confirmLabel ?? $t('common.confirm')"
+    :action-color="confirmColor ?? typeColor"
+    :loading="loading"
+    @action="$emit('confirm')"
   >
-    <v-card>
-      <v-card-title class="text-title-large px-6 pt-6 pb-2">
-        {{ title }}
-      </v-card-title>
-      <v-card-text
-        v-if="text"
-        class="text-body-medium text-medium-emphasis px-6 py-2"
-      >
-        {{ text }}
-      </v-card-text>
-      <v-card-actions class="px-6 pt-2 pb-6">
-        <v-spacer />
-        <v-btn
-          variant="text"
-          :disabled="loading"
-          @click="open = false"
-        >
-          {{ $t('common.cancel') }}
-        </v-btn>
-        <v-btn
-          :color="confirmColor"
-          variant="flat"
-          :loading="loading"
-          @click="$emit('confirm')"
-        >
-          {{ confirmLabel ?? $t('common.confirm') }}
-        </v-btn>
-      </v-card-actions>
-    </v-card>
-  </v-dialog>
+    <p
+      v-if="text"
+      class="text-body-medium text-medium-emphasis ma-0"
+    >
+      {{ text }}
+    </p>
+  </AppDialogShell>
 </template>
