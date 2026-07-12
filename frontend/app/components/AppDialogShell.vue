@@ -75,7 +75,7 @@ defineEmits<{ action: [] }>()
 <style scoped>
 /* Accent line under the title; its color comes from `accentColor` (set inline). */
 .app-dialog-shell__title {
-  border-bottom: 2px solid;
+  border-bottom: 1px solid;
 }
 
 /* Title-case the title in English only. CSS `capitalize` applies English-style

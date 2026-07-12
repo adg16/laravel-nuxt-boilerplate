@@ -16,11 +16,41 @@ export interface CreateUserPayload extends UserPayload {
   password_confirmation?: string
 }
 
+// Server-side pagination/sort/filter params for the users list.
+export interface UserListParams {
+  page: number
+  perPage: number
+  sortBy?: string
+  sortDir?: 'asc' | 'desc'
+  name?: string
+  email?: string
+  roles?: string[]
+  status?: string[]
+}
+
+export interface UserListResult {
+  data: User[]
+  total: number
+}
+
 export function useUsers() {
   const api = useApi()
 
   return {
-    list: () => api<User[]>('/users'),
+    list: (params: UserListParams) => api<UserListResult>('/users', {
+      query: {
+        page: params.page,
+        per_page: params.perPage,
+        sort_by: params.sortBy || undefined,
+        sort_dir: params.sortDir || undefined,
+        name: params.name?.trim() || undefined,
+        email: params.email?.trim() || undefined,
+        // Comma-joined so they survive query serialization as a single value the
+        // backend splits (repeated `roles=` keys don't round-trip to a PHP array).
+        roles: params.roles?.length ? params.roles.join(',') : undefined,
+        status: params.status?.length ? params.status.join(',') : undefined
+      }
+    }),
     create: (body: CreateUserPayload) => api<User>('/users', { method: 'POST', body }),
     update: (id: number, body: UserPayload) => api<User>(`/users/${id}`, { method: 'PUT', body }),
     remove: (id: number) => api<{ message: string }>(`/users/${id}`, { method: 'DELETE' }),

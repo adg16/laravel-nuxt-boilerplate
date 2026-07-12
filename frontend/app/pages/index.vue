@@ -34,7 +34,6 @@ const statusColor: Record<string, string> = {
       >
         <v-card
           border
-          flat
           class="pa-4"
         >
           <div class="d-flex align-center ga-4">
@@ -64,11 +63,10 @@ const statusColor: Record<string, string> = {
 
     <v-card
       border
-      flat
       class="mt-6"
     >
       <v-card-item>
-        <v-card-title class="text-title-large">
+        <v-card-title>
           {{ $t('dashboard.recentUsers') }}
         </v-card-title>
       </v-card-item>

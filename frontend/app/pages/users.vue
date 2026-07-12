@@ -2,7 +2,6 @@
 import { z } from 'zod'
 import type { VForm } from 'vuetify/components'
 import { PERMISSIONS } from '~/constants/permissions'
-import type { Role } from '~/types/rbac'
 import type { User } from '~/types/user'
 
 definePageMeta({
@@ -56,32 +55,122 @@ function activationTooltip(user: User): string {
 
 const users = ref<User[]>([])
 const roleNames = ref<string[]>([])
-const loading = ref(true)
+const total = ref(0)
+const loading = ref(false)
+
+// Server-side filter panel: free-text name/email, role multiselect (any of the
+// picked roles), and a single status. Changing a filter refetches from page 1.
+const filters = reactive({
+  name: '',
+  email: '',
+  roles: [] as string[],
+  status: [] as string[]
+})
+
+const STATUS_VALUES = ['active', 'inactive', 'verified', 'unverified'] as const
+const statusOptions = computed(() =>
+  STATUS_VALUES.map(value => ({ title: t(`users.status.${value}`), value }))
+)
+
+const hasActiveFilters = computed(() =>
+  !!filters.name || !!filters.email || filters.roles.length > 0 || filters.status.length > 0
+)
+
+function clearFilters() {
+  filters.name = ''
+  filters.email = ''
+  filters.roles = []
+  filters.status = []
+}
+
+// Only name/email are server-sortable (the backend whitelists those columns);
+// roles/status are composed values. The actions column is manage-only.
+const headers = computed(() => [
+  { title: t('table.name'), key: 'name' },
+  { title: t('table.email'), key: 'email' },
+  { title: t('table.roles'), key: 'roles', sortable: false },
+  { title: t('table.status'), key: 'status', sortable: false },
+  ...(canManage.value
+    ? [{ title: t('table.actions'), key: 'actions', sortable: false, align: 'end' as const }]
+    : [])
+])
+
+// The data table owns page / itemsPerPage / sortBy and emits them together via
+// @update:options (which also fires once on mount — that's the initial load).
+// `page` is bound so a filter change can reset it to the first page.
+const page = ref(1)
+const itemsPerPage = ref(25)
+const itemsPerPageOptions = [10, 25, 50, 100]
+
+interface DataTableOptions {
+  page: number
+  itemsPerPage: number
+  sortBy: { key: string, order?: 'asc' | 'desc' }[]
+}
+
+let lastOptions: DataTableOptions | null = null
+// Guards against out-of-order responses: only the most recent request may write
+// results / clear loading, so a slow earlier fetch can't clobber a newer one.
+let loadSeq = 0
+
+async function onOptions(options: DataTableOptions) {
+  lastOptions = options
+  await load()
+}
 
 async function load() {
+  if (!lastOptions) return
+  const seq = ++loadSeq
   loading.value = true
   try {
-    users.value = await usersApi.list()
+    const sort = lastOptions.sortBy[0]
+    const result = await usersApi.list({
+      page: lastOptions.page,
+      perPage: lastOptions.itemsPerPage,
+      sortBy: sort?.key,
+      sortDir: sort?.order,
+      name: filters.name,
+      email: filters.email,
+      roles: filters.roles,
+      status: filters.status
+    })
+    if (seq !== loadSeq) return
+    users.value = result.data
+    total.value = result.total
   } catch (e) {
-    notify(apiErrorMessage(e), 'error')
+    if (seq === loadSeq) notify(apiErrorMessage(e), 'error')
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
+// Debounce filter changes (per-keystroke on the text fields) and reset to the
+// first page. Resetting a non-1 page re-emits @update:options → load(); when
+// already on page 1 there's no emit, so reload directly.
+let filterTimer: ReturnType<typeof setTimeout> | undefined
+watch(filters, () => {
+  clearTimeout(filterTimer)
+  filterTimer = setTimeout(() => {
+    if (page.value !== 1) {
+      page.value = 1
+    } else {
+      load()
+    }
+  }, 300)
+}, { deep: true })
+
+// Powers both the roles filter (needs only users.view) and the create/edit
+// dialog (manage-only). Loaded for anyone who can see the page; a viewer lacking
+// roles.view just gets an empty list (the request fails soft).
 async function loadRoleOptions() {
-  if (!canManage.value) return
   try {
-    roleNames.value = (await rolesApi.list()).map((role: Role) => role.name)
+    roleNames.value = await rolesApi.options()
   } catch {
-    // Non-fatal: the dialog just shows no role options.
+    // Non-fatal: the filter/dialog just show no role options.
   }
 }
 
-onMounted(() => {
-  load()
-  loadRoleOptions()
-})
+onMounted(loadRoleOptions)
 
 // --- Create (invite / set-password) / edit dialog ---
 const dialog = ref(false)
@@ -273,141 +362,158 @@ async function onDeactivate() {
       </Can>
     </AppPageHeader>
 
+    <AppSearchPanel
+      :active="hasActiveFilters"
+      @clear="clearFilters"
+    >
+      <v-text-field
+        v-model="filters.name"
+        :label="$t('table.name')"
+        prepend-inner-icon="mdi-magnify"
+        density="comfortable"
+        clearable
+        hide-details
+      />
+      <v-text-field
+        v-model="filters.email"
+        :label="$t('table.email')"
+        prepend-inner-icon="mdi-magnify"
+        density="comfortable"
+        clearable
+        hide-details
+      />
+      <v-autocomplete
+        v-model="filters.roles"
+        :label="$t('table.roles')"
+        :items="roleNames"
+        density="comfortable"
+        multiple
+        chips
+        closable-chips
+        clearable
+        hide-details
+      />
+      <v-autocomplete
+        v-model="filters.status"
+        :label="$t('table.status')"
+        :items="statusOptions"
+        density="comfortable"
+        multiple
+        chips
+        closable-chips
+        clearable
+        hide-details
+      />
+    </AppSearchPanel>
+
     <v-card
       border
-      flat
     >
-      <v-table>
-        <thead>
-          <tr>
-            <th class="text-left">
-              {{ $t('table.name') }}
-            </th>
-            <th class="text-left">
-              {{ $t('table.email') }}
-            </th>
-            <th class="text-left">
-              {{ $t('table.roles') }}
-            </th>
-            <th class="text-left">
-              {{ $t('table.status') }}
-            </th>
-            <th
-              v-if="canManage"
-              class="text-right"
-            >
-              {{ $t('table.actions') }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td
-              :colspan="canManage ? 5 : 4"
-              class="text-center text-medium-emphasis py-8"
-            >
-              <v-progress-circular
-                indeterminate
-                size="24"
-              />
-            </td>
-          </tr>
-          <tr
-            v-for="user in users"
-            v-else
-            :key="user.id"
+      <v-data-table-server
+        v-model:page="page"
+        :headers="headers"
+        :items="users"
+        :items-length="total"
+        :items-per-page="itemsPerPage"
+        :items-per-page-options="itemsPerPageOptions"
+        :loading="loading"
+        :no-data-text="$t('common.noResults')"
+        @update:options="onOptions"
+      >
+        <template #[`item.name`]="{ item }">
+          <div class="d-flex align-center ga-3">
+            <AppUserAvatar
+              :name="item.name"
+              :src="item.avatar_url"
+              :size="36"
+            />
+            <span class="font-weight-medium">{{ item.name }}</span>
+          </div>
+        </template>
+
+        <template #[`item.email`]="{ item }">
+          <span class="text-medium-emphasis">{{ item.email }}</span>
+        </template>
+
+        <template #[`item.roles`]="{ item }">
+          <div
+            v-if="item.roles.length"
+            class="d-flex flex-wrap ga-1"
           >
-            <td>
-              <div class="d-flex align-center ga-3">
-                <AppUserAvatar
-                  :name="user.name"
-                  :src="user.avatar_url"
-                  :size="36"
-                />
-                <span class="font-weight-medium">{{ user.name }}</span>
-              </div>
-            </td>
-            <td class="text-medium-emphasis">
-              {{ user.email }}
-            </td>
-            <td class="py-2">
-              <div
-                v-if="user.roles.length"
-                class="d-flex flex-wrap ga-1"
-              >
-                <v-chip
-                  v-for="role in user.roles"
-                  :key="role"
-                  size="small"
-                  variant="tonal"
-                >
-                  {{ role }}
-                </v-chip>
-              </div>
-              <span
-                v-else
-                class="text-medium-emphasis"
-              >—</span>
-            </td>
-            <td class="py-2">
-              <div class="d-flex flex-wrap ga-1">
-                <v-chip
-                  v-if="!user.is_active"
-                  color="error"
-                  prepend-icon="mdi-account-off-outline"
-                  size="small"
-                  variant="tonal"
-                >
-                  {{ $t('users.deactivated') }}
-                </v-chip>
-                <v-chip
-                  :color="user.is_verified ? 'success' : 'warning'"
-                  :prepend-icon="user.is_verified ? 'mdi-check-circle-outline' : 'mdi-clock-outline'"
-                  size="small"
-                  variant="tonal"
-                >
-                  {{ user.is_verified ? $t('users.verified') : $t('users.pending') }}
-                </v-chip>
-              </div>
-            </td>
-            <td
-              v-if="canManage"
-              class="text-right text-no-wrap"
+            <v-chip
+              v-for="role in item.roles"
+              :key="role"
+              size="small"
+              variant="tonal"
             >
-              <AppTableAction
-                icon="mdi-email-sync-outline"
-                :tooltip="resendTooltip(user)"
-                :disabled="user.is_protected || user.is_verified"
-                @click="resendInvite(user)"
-              />
-              <AppTableAction
-                icon="mdi-pencil-outline"
-                :tooltip="user.is_protected ? $t('users.protectedTooltip') : $t('common.edit')"
-                :disabled="user.is_protected"
-                @click="openEdit(user)"
-              />
-              <AppTableAction
-                icon="mdi-shield-refresh-outline"
-                :tooltip="resetTwoFactorTooltip(user)"
-                :disabled="user.is_protected || !user.two_factor_enabled"
-                @click="openResetTwoFactor(user)"
-              />
-              <AppTableAction
-                :icon="user.is_active ? 'mdi-account-off-outline' : 'mdi-account-check-outline'"
-                :tooltip="activationTooltip(user)"
-                :disabled="user.is_protected || user.id === auth.user?.id"
-                @click="toggleActivation(user)"
-              />
-              <AppTableAction
-                icon="mdi-delete-outline"
-                :tooltip="deleteTooltip(user)"
-                :disabled="user.is_protected || user.id === auth.user?.id"
-                @click="openDelete(user)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
+              {{ role }}
+            </v-chip>
+          </div>
+          <span
+            v-else
+            class="text-medium-emphasis"
+          >—</span>
+        </template>
+
+        <template #[`item.status`]="{ item }">
+          <div class="d-flex flex-wrap ga-1">
+            <v-chip
+              :color="item.is_active ? 'success' : 'error'"
+              :prepend-icon="item.is_active ? 'mdi-account-check-outline' : 'mdi-account-off-outline'"
+              size="small"
+              variant="tonal"
+            >
+              {{ item.is_active ? $t('users.status.active') : $t('users.deactivated') }}
+            </v-chip>
+            <v-chip
+              :color="item.is_verified ? 'success' : 'warning'"
+              :prepend-icon="item.is_verified ? 'mdi-check-circle-outline' : 'mdi-clock-outline'"
+              size="small"
+              variant="tonal"
+            >
+              {{ item.is_verified ? $t('users.verified') : $t('users.pending') }}
+            </v-chip>
+          </div>
+        </template>
+
+        <template
+          v-if="canManage"
+          #[`item.actions`]="{ item }"
+        >
+          <div class="text-no-wrap">
+            <AppTableAction
+              icon="mdi-email-sync-outline"
+              :tooltip="resendTooltip(item)"
+              :disabled="item.is_protected || item.is_verified"
+              @click="resendInvite(item)"
+            />
+            <AppTableAction
+              icon="mdi-pencil-outline"
+              :tooltip="item.is_protected ? $t('users.protectedTooltip') : $t('common.edit')"
+              :disabled="item.is_protected"
+              @click="openEdit(item)"
+            />
+            <AppTableAction
+              icon="mdi-shield-refresh-outline"
+              :tooltip="resetTwoFactorTooltip(item)"
+              :disabled="item.is_protected || !item.two_factor_enabled"
+              @click="openResetTwoFactor(item)"
+            />
+            <AppTableAction
+              :icon="item.is_active ? 'mdi-account-off-outline' : 'mdi-account-check-outline'"
+              :tooltip="activationTooltip(item)"
+              :disabled="item.is_protected || item.id === auth.user?.id"
+              @click="toggleActivation(item)"
+            />
+            <AppTableAction
+              icon="mdi-delete-outline"
+              :tooltip="deleteTooltip(item)"
+              :disabled="item.is_protected || item.id === auth.user?.id"
+              @click="openDelete(item)"
+            />
+          </div>
+        </template>
+      </v-data-table-server>
     </v-card>
 
     <!-- Invite / edit dialog -->

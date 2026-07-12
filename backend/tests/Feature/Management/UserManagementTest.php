@@ -36,7 +36,73 @@ class UserManagementTest extends TestCase
 
         $this->getJson('/api/users')
             ->assertOk()
-            ->assertJsonPath('0.email', $viewer->email);
+            ->assertJsonPath('data.0.email', $viewer->email)
+            ->assertJsonPath('total', 1);
+    }
+
+    public function test_users_list_paginates_and_reports_the_total(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        User::factory()->count(30)->create();
+        $this->loginAs($admin);
+
+        $response = $this->getJson('/api/users?per_page=10&page=1')
+            ->assertOk()
+            ->assertJsonCount(10, 'data');
+
+        // 30 created + the admin themselves.
+        $this->assertSame(31, $response->json('total'));
+    }
+
+    public function test_users_list_filters_by_name_role_and_status(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $alice = User::factory()->create(['name' => 'Alice Zephyr', 'email' => 'alice@example.com'])->assignRole('viewer');
+        $bob = User::factory()->create(['name' => 'Bob Quill', 'email' => 'bob@example.com', 'deactivated_at' => now()])->assignRole('admin');
+        $this->loginAs($admin);
+
+        // Name substring match.
+        $this->getJson('/api/users?name=zephyr')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.email', $alice->email);
+
+        // Role filter — only viewers.
+        $emails = collect($this->getJson('/api/users?roles=viewer')->assertOk()->json('data'))->pluck('email');
+        $this->assertTrue($emails->contains($alice->email));
+        $this->assertFalse($emails->contains($bob->email));
+
+        // Status filter — only deactivated accounts.
+        $emails = collect($this->getJson('/api/users?status=inactive')->assertOk()->json('data'))->pluck('email');
+        $this->assertTrue($emails->contains($bob->email));
+        $this->assertFalse($emails->contains($alice->email));
+    }
+
+    public function test_users_list_name_filter_matches_a_literal_zero(): void
+    {
+        // "0" is a falsy string in PHP — the filter must still apply, not be skipped.
+        $admin = User::factory()->create(['name' => 'Admin User'])->assignRole('admin');
+        User::factory()->create(['name' => 'Agent 007', 'email' => 'agent@example.com']);
+        $this->loginAs($admin);
+
+        $names = collect($this->getJson('/api/users?name=0')->assertOk()->json('data'))->pluck('name');
+        $this->assertTrue($names->contains('Agent 007'));
+        $this->assertFalse($names->contains('Admin User'));
+    }
+
+    public function test_users_list_status_filter_matches_any_selected(): void
+    {
+        $admin = User::factory()->create(['email' => 'admin-user@example.com'])->assignRole('admin');
+        User::factory()->create(['email' => 'av@example.com']); // active + verified
+        User::factory()->create(['email' => 'iv@example.com', 'deactivated_at' => now()]); // inactive + verified
+        User::factory()->create(['email' => 'au@example.com', 'email_verified_at' => null]); // active + unverified
+        $this->loginAs($admin);
+
+        // inactive OR unverified — matches users failing either check.
+        $emails = collect($this->getJson('/api/users?status=inactive,unverified')->assertOk()->json('data'))->pluck('email');
+        $this->assertTrue($emails->contains('iv@example.com'));  // inactive
+        $this->assertTrue($emails->contains('au@example.com'));  // unverified
+        $this->assertFalse($emails->contains('av@example.com')); // active + verified → neither
     }
 
     public function test_user_without_manage_cannot_create_user(): void
@@ -134,7 +200,7 @@ class UserManagementTest extends TestCase
         $system = User::factory()->create(['email' => config('app.system_user_email')]);
         $this->loginAs($admin);
 
-        $emails = collect($this->getJson('/api/users')->assertOk()->json())->pluck('email');
+        $emails = collect($this->getJson('/api/users')->assertOk()->json('data'))->pluck('email');
 
         $this->assertTrue($emails->contains($admin->email));
         $this->assertFalse($emails->contains($super->email));
@@ -147,7 +213,7 @@ class UserManagementTest extends TestCase
         $system = User::factory()->create(['email' => config('app.system_user_email')]);
         $this->loginAs($super);
 
-        $emails = collect($this->getJson('/api/users')->assertOk()->json())->pluck('email');
+        $emails = collect($this->getJson('/api/users')->assertOk()->json('data'))->pluck('email');
 
         $this->assertTrue($emails->contains($super->email));
         $this->assertTrue($emails->contains($system->email));

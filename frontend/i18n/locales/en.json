@@ -10,7 +10,10 @@
     "save": "Save",
     "edit": "Edit",
     "delete": "Delete",
-    "copy": "Copy"
+    "copy": "Copy",
+    "noResults": "No results found.",
+    "filters": "Filters",
+    "clearFilters": "Clear Filters"
   },
   "nav": {
     "dashboard": "Dashboard",
@@ -129,6 +132,12 @@
   "users": {
     "new": "New User",
     "edit": "Edit User",
+    "status": {
+      "active": "Active",
+      "inactive": "Inactive",
+      "verified": "Verified",
+      "unverified": "Pending Verification"
+    },
     "invited": "Invitation sent.",
     "created": "User created.",
     "updated": "User updated.",
@@ -145,7 +154,7 @@
     "cannotDeactivateSelf": "You can't deactivate your own account.",
     "protectedTooltip": "This account is protected and can't be modified.",
     "verified": "Verified",
-    "pending": "Pending",
+    "pending": "Pending Verification",
     "deactivated": "Deactivated",
     "activate": "Activate",
     "deactivate": "Deactivate",
@@ -220,7 +229,6 @@
     }
   },
   "profile": {
-    "description": "Update your personal information and password.",
     "avatar": {
       "title": "Profile photo",
       "subtitle": "Upload a picture to personalize your account.",
@@ -245,7 +253,6 @@
     }
   },
   "security": {
-    "description": "Add an extra layer of protection when you sign in.",
     "requiredHint": "Two-factor authentication is required. Set it up below to continue using the app.",
     "unavailable": "Two-factor authentication is currently disabled by an administrator.",
     "enableIntro": "When enabled, you'll enter a one-time code each time you sign in.",

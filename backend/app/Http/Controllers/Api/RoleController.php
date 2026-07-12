@@ -6,30 +6,57 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Role\StoreRoleRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
+use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
-    public function index(): AnonymousResourceCollection
+    public function index(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'page' => ['integer', 'min:1'],
+            'per_page' => ['integer', 'min:1', 'max:100'],
+            'sort_by' => ['string', 'in:name,users_count'],
+            'sort_dir' => ['string', 'in:asc,desc'],
+            'name' => ['string', 'max:255'],
+            'permissions' => ['string', 'max:1000'],
+        ]);
+
         // Count assigned users via the pivot directly. spatie's `users()`
         // relation resolves the model from the *default* guard, which under
         // `auth:sanctum` is `sanctum` (provider null) — so `withCount('users')`
         // blows up. The pivot subquery avoids guard resolution altogether.
-        return RoleResource::collection(
-            Role::query()
-                ->with('permissions')
-                ->select('roles.*')
-                ->addSelect(['users_count' => DB::table($this->pivotTable())
-                    ->selectRaw('count(*)')
-                    ->whereColumn($this->rolePivotKey(), 'roles.id')])
-                ->orderBy('name')
-                ->get()
+        $query = Role::query()
+            ->with('permissions')
+            ->select('roles.*')
+            ->addSelect(['users_count' => DB::table($this->pivotTable())
+                ->selectRaw('count(*)')
+                ->whereColumn($this->rolePivotKey(), 'roles.id')]);
+
+        if (($name = trim((string) ($validated['name'] ?? ''))) !== '') {
+            $query->where('name', 'like', '%'.$this->escapeLike($name).'%');
+        }
+        // `permissions` is a comma-separated list — match roles granting ANY of them.
+        $permissions = array_filter(array_map('trim', explode(',', $validated['permissions'] ?? '')));
+        if ($permissions) {
+            $query->whereHas('permissions', fn (Builder $q) => $q->whereIn('name', $permissions));
+        }
+
+        $query->orderBy($validated['sort_by'] ?? 'name', $validated['sort_dir'] ?? 'asc');
+
+        $paginator = $query->paginate(
+            perPage: $validated['per_page'] ?? 25,
+            page: $validated['page'] ?? 1,
         );
+
+        return response()->json([
+            'data' => RoleResource::collection($paginator->getCollection())->resolve($request),
+            'total' => $paginator->total(),
+        ]);
     }
 
     public function store(StoreRoleRequest $request): JsonResponse

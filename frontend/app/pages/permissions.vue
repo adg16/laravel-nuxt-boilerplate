@@ -34,7 +34,6 @@ onMounted(load)
 
     <v-card
       border
-      flat
     >
       <v-table>
         <thead>

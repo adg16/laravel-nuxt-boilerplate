@@ -127,16 +127,13 @@ async function onChangePassword() {
 
 <template>
   <div>
-    <AppPageHeader :description="$t('profile.description')" />
-
     <div class="d-flex flex-column ga-6">
       <!-- Avatar -->
       <v-card
         border
-        flat
       >
         <v-card-item>
-          <v-card-title class="text-title-large">
+          <v-card-title>
             {{ $t('profile.avatar.title') }}
           </v-card-title>
           <v-card-subtitle>{{ $t('profile.avatar.subtitle') }}</v-card-subtitle>
@@ -192,10 +189,9 @@ async function onChangePassword() {
       <!-- Profile information -->
       <v-card
         border
-        flat
       >
         <v-card-item>
-          <v-card-title class="text-title-large">
+          <v-card-title>
             {{ $t('profile.info.title') }}
           </v-card-title>
           <v-card-subtitle>{{ $t('profile.info.subtitle') }}</v-card-subtitle>
@@ -254,10 +250,9 @@ async function onChangePassword() {
       <!-- Change password -->
       <v-card
         border
-        flat
       >
         <v-card-item>
-          <v-card-title class="text-title-large">
+          <v-card-title>
             {{ $t('profile.password.title') }}
           </v-card-title>
           <v-card-subtitle>{{ $t('profile.password.subtitle') }}</v-card-subtitle>

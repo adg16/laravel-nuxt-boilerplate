@@ -98,8 +98,7 @@ async function handleLogout() {
          so Vuetify's layout gives it the entire top edge and insets the drawer
          below it (the drawer no longer occupies the top-left corner). -->
     <v-app-bar
-      flat
-      border="b"
+      elevation="1"
     >
       <template #prepend>
         <!-- The burger toggles the nav drawer and sits to the left of the brand.

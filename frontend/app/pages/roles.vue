@@ -21,7 +21,8 @@ const canManage = computed(() => can(PERMISSIONS.RolesManage))
 
 const roles = ref<Role[]>([])
 const permissions = ref<Permission[]>([])
-const loading = ref(true)
+const total = ref(0)
+const loading = ref(false)
 
 // Group the flat permission list by the segment before the dot ("users.view"
 // → group "users") so the editor reads as sections rather than a long list.
@@ -34,20 +35,105 @@ const permissionGroups = computed(() => {
   return Object.entries(groups).map(([name, items]) => ({ name, items }))
 })
 
+// Server-side filter panel: free-text name and a permission multiselect (roles
+// granting any of the picked permissions).
+const filters = reactive({
+  name: '',
+  permissions: [] as string[]
+})
+
+const permissionOptions = computed(() =>
+  permissions.value.map(permission => ({ title: fullLabel(permission.name), value: permission.name }))
+)
+
+const hasActiveFilters = computed(() =>
+  !!filters.name || filters.permissions.length > 0
+)
+
+function clearFilters() {
+  filters.name = ''
+  filters.permissions = []
+}
+
+// Name and user count are server-sortable; the permission list is a composed value.
+const headers = computed(() => [
+  { title: t('table.role'), key: 'name' },
+  { title: t('table.permissions'), key: 'permissions', sortable: false },
+  { title: t('table.users'), key: 'users_count' },
+  ...(canManage.value
+    ? [{ title: t('table.actions'), key: 'actions', sortable: false, align: 'end' as const }]
+    : [])
+])
+
+// The data table owns page / itemsPerPage / sortBy and emits them together via
+// @update:options (which also fires once on mount — that's the initial load).
+const page = ref(1)
+const itemsPerPage = ref(25)
+const itemsPerPageOptions = [10, 25, 50, 100]
+
+interface DataTableOptions {
+  page: number
+  itemsPerPage: number
+  sortBy: { key: string, order?: 'asc' | 'desc' }[]
+}
+
+let lastOptions: DataTableOptions | null = null
+// Guards against out-of-order responses: only the most recent request may write
+// results / clear loading, so a slow earlier fetch can't clobber a newer one.
+let loadSeq = 0
+
+async function onOptions(options: DataTableOptions) {
+  lastOptions = options
+  await load()
+}
+
 async function load() {
+  if (!lastOptions) return
+  const seq = ++loadSeq
   loading.value = true
   try {
-    const [rolesData, permissionsData] = await Promise.all([rolesApi.list(), permissionsApi.list()])
-    roles.value = rolesData
-    permissions.value = permissionsData
+    const sort = lastOptions.sortBy[0]
+    const result = await rolesApi.list({
+      page: lastOptions.page,
+      perPage: lastOptions.itemsPerPage,
+      sortBy: sort?.key,
+      sortDir: sort?.order,
+      name: filters.name,
+      permissions: filters.permissions
+    })
+    if (seq !== loadSeq) return
+    roles.value = result.data
+    total.value = result.total
   } catch (e) {
-    notify(apiErrorMessage(e), 'error')
+    if (seq === loadSeq) notify(apiErrorMessage(e), 'error')
   } finally {
-    loading.value = false
+    if (seq === loadSeq) loading.value = false
   }
 }
 
-onMounted(load)
+// Debounce filter changes (per-keystroke on the name field) and reset to page 1.
+let filterTimer: ReturnType<typeof setTimeout> | undefined
+watch(filters, () => {
+  clearTimeout(filterTimer)
+  filterTimer = setTimeout(() => {
+    if (page.value !== 1) {
+      page.value = 1
+    } else {
+      load()
+    }
+  }, 300)
+}, { deep: true })
+
+// Permissions power both the filter dropdown and the create/edit dialog.
+async function loadPermissions() {
+  try {
+    permissions.value = await permissionsApi.list()
+  } catch (e) {
+    notify(apiErrorMessage(e), 'error')
+  }
+}
+
+onMounted(loadPermissions)
 
 // --- Create / edit dialog ---
 const dialog = ref(false)
@@ -132,100 +218,101 @@ async function onDelete() {
       </Can>
     </AppPageHeader>
 
-    <v-card
-      border
-      flat
+    <AppSearchPanel
+      :active="hasActiveFilters"
+      @clear="clearFilters"
     >
-      <v-table>
-        <thead>
-          <tr>
-            <th class="text-left">
-              {{ $t('table.role') }}
-            </th>
-            <th class="text-left">
-              {{ $t('table.permissions') }}
-            </th>
-            <th class="text-left">
-              {{ $t('table.users') }}
-            </th>
-            <th
-              v-if="canManage"
-              class="text-right"
-            >
-              {{ $t('table.actions') }}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-if="loading">
-            <td
-              :colspan="canManage ? 4 : 3"
-              class="text-center text-medium-emphasis py-8"
-            >
-              <v-progress-circular
-                indeterminate
-                size="24"
-              />
-            </td>
-          </tr>
-          <tr
-            v-for="role in roles"
-            v-else
-            :key="role.id"
+      <v-text-field
+        v-model="filters.name"
+        :label="$t('fields.roleName')"
+        prepend-inner-icon="mdi-magnify"
+        density="comfortable"
+        clearable
+        hide-details
+      />
+      <v-autocomplete
+        v-model="filters.permissions"
+        :label="$t('table.permissions')"
+        :items="permissionOptions"
+        density="comfortable"
+        multiple
+        chips
+        closable-chips
+        clearable
+        hide-details
+      />
+    </AppSearchPanel>
+
+    <v-card border>
+      <v-data-table-server
+        v-model:page="page"
+        :headers="headers"
+        :items="roles"
+        :items-length="total"
+        :items-per-page="itemsPerPage"
+        :items-per-page-options="itemsPerPageOptions"
+        :loading="loading"
+        :no-data-text="$t('common.noResults')"
+        @update:options="onOptions"
+      >
+        <template #[`item.name`]="{ item }">
+          <v-chip
+            size="small"
+            variant="tonal"
+            :color="item.name === SUPER_ADMIN ? 'primary' : undefined"
           >
-            <td>
-              <v-chip
-                size="small"
-                variant="tonal"
-                :color="role.name === SUPER_ADMIN ? 'primary' : undefined"
-              >
-                {{ role.name }}
-              </v-chip>
-            </td>
-            <td class="py-2">
-              <span
-                v-if="role.name === SUPER_ADMIN"
-                class="text-medium-emphasis"
-              >{{ $t('roles.allAccess') }}</span>
-              <span
-                v-else-if="!role.permissions.length"
-                class="text-medium-emphasis"
-              >—</span>
-              <div
-                v-else
-                class="d-flex flex-wrap ga-1"
-              >
-                <v-chip
-                  v-for="permission in role.permissions"
-                  :key="permission"
-                  size="x-small"
-                  variant="outlined"
-                >
-                  {{ fullLabel(permission) }}
-                </v-chip>
-              </div>
-            </td>
-            <td>{{ role.users_count ?? 0 }}</td>
-            <td
-              v-if="canManage"
-              class="text-right text-no-wrap"
+            {{ item.name }}
+          </v-chip>
+        </template>
+
+        <template #[`item.permissions`]="{ item }">
+          <span
+            v-if="item.name === SUPER_ADMIN"
+            class="text-medium-emphasis"
+          >{{ $t('roles.allAccess') }}</span>
+          <span
+            v-else-if="!item.permissions.length"
+            class="text-medium-emphasis"
+          >—</span>
+          <div
+            v-else
+            class="d-flex flex-wrap ga-1"
+          >
+            <v-chip
+              v-for="permission in item.permissions"
+              :key="permission"
+              size="x-small"
+              variant="outlined"
             >
-              <AppTableAction
-                icon="mdi-pencil-outline"
-                :tooltip="role.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.edit')"
-                :disabled="role.name === SUPER_ADMIN"
-                @click="openEdit(role)"
-              />
-              <AppTableAction
-                icon="mdi-delete-outline"
-                :tooltip="role.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.delete')"
-                :disabled="role.name === SUPER_ADMIN"
-                @click="openDelete(role)"
-              />
-            </td>
-          </tr>
-        </tbody>
-      </v-table>
+              {{ fullLabel(permission) }}
+            </v-chip>
+          </div>
+        </template>
+
+        <template #[`item.users_count`]="{ item }">
+          {{ item.users_count ?? 0 }}
+        </template>
+
+        <template
+          v-if="canManage"
+          #[`item.actions`]="{ item }"
+        >
+          <div class="text-no-wrap">
+            <AppTableAction
+              icon="mdi-pencil-outline"
+              :tooltip="item.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.edit')"
+              :disabled="item.name === SUPER_ADMIN"
+              @click="openEdit(item)"
+            />
+            <AppTableAction
+              icon="mdi-delete-outline"
+              :tooltip="item.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.delete')"
+              :disabled="item.name === SUPER_ADMIN"
+              @click="openDelete(item)"
+            />
+          </div>
+        </template>
+      </v-data-table-server>
     </v-card>
 
     <!-- Create / edit dialog -->

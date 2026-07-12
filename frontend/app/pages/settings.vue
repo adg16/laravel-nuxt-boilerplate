@@ -106,11 +106,10 @@ async function save(setting: Setting) {
         v-for="group in groups"
         :key="group.name"
         border
-        flat
         class="mb-6"
       >
         <v-card-item>
-          <v-card-title class="text-title-large">
+          <v-card-title>
             {{ groupLabel(group.name) }}
           </v-card-title>
         </v-card-item>

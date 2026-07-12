@@ -190,8 +190,6 @@ async function regenerate() {
 
 <template>
   <div>
-    <AppPageHeader :description="$t('security.description')" />
-
     <!-- Required mode: enrollment is mandatory before the rest of the app opens. -->
     <v-alert
       v-if="modeRequired && !enabled"
@@ -204,7 +202,6 @@ async function regenerate() {
 
     <v-card
       border
-      flat
     >
       <v-card-item>
         <template #prepend>
@@ -214,7 +211,7 @@ async function regenerate() {
             size="28"
           />
         </template>
-        <v-card-title class="text-title-large">
+        <v-card-title>
           {{ $t('security.card.title') }}
         </v-card-title>
         <v-card-subtitle>

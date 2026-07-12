@@ -12,7 +12,6 @@ use App\Services\InvitationService;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -20,14 +19,22 @@ use Laravel\Fortify\Actions\DisableTwoFactorAuthentication as FortifyDisableTwoF
 
 class UserController extends Controller
 {
-    public function index(Request $request): AnonymousResourceCollection
+    public function index(Request $request): JsonResponse
     {
+        $validated = $request->validate([
+            'page' => ['integer', 'min:1'],
+            'per_page' => ['integer', 'min:1', 'max:100'],
+            'sort_by' => ['string', 'in:name,email,created_at'],
+            'sort_dir' => ['string', 'in:asc,desc'],
+            'name' => ['string', 'max:255'],
+            'email' => ['string', 'max:255'],
+            'roles' => ['string', 'max:255'],
+            'status' => ['string', 'max:255'],
+        ]);
+
         // Eager-load what UserResource reads (roles + the permissions each role
-        // grants) so getAllPermissions() doesn't lazy-load per row (N+1). Lists
-        // are intentionally unpaginated — this is a backoffice with modest data;
-        // add ->paginate() here (and in the frontend table) if a deployment
-        // outgrows that.
-        $query = User::with('roles.permissions', 'permissions')->latest();
+        // grants) so getAllPermissions() doesn't lazy-load per row (N+1).
+        $query = User::with('roles.permissions', 'permissions');
 
         // Protected accounts — the super-admin and the System service user — are
         // only visible to a super-admin. Everyone else, even with users.view,
@@ -37,7 +44,53 @@ class UserController extends Controller
                 ->whereDoesntHave('roles', fn (Builder $q) => $q->where('name', 'super-admin'));
         }
 
-        return UserResource::collection($query->get());
+        // Filters (all optional). Text fields are substring matches with LIKE
+        // wildcards escaped so a stray % / _ in the query can't widen it.
+        if (($name = trim((string) ($validated['name'] ?? ''))) !== '') {
+            $query->where('name', 'like', '%'.$this->escapeLike($name).'%');
+        }
+        if (($email = trim((string) ($validated['email'] ?? ''))) !== '') {
+            $query->where('email', 'like', '%'.$this->escapeLike($email).'%');
+        }
+        // `roles` is a comma-separated list of role names — match users holding
+        // ANY of them.
+        $roles = array_filter(array_map('trim', explode(',', $validated['roles'] ?? '')));
+        if ($roles) {
+            $query->whereHas('roles', fn (Builder $q) => $q->whereIn('name', $roles));
+        }
+        // `status` is a comma-separated set — match users satisfying ANY of the
+        // selected states (OR), grouped so it doesn't bleed into the other AND
+        // filters above.
+        $statuses = array_filter(array_map('trim', explode(',', $validated['status'] ?? '')));
+        if ($statuses) {
+            $query->where(function (Builder $q) use ($statuses) {
+                foreach ($statuses as $status) {
+                    match ($status) {
+                        'active' => $q->orWhereNull('deactivated_at'),
+                        'inactive' => $q->orWhereNotNull('deactivated_at'),
+                        'verified' => $q->orWhereNotNull('email_verified_at'),
+                        'unverified' => $q->orWhereNull('email_verified_at'),
+                        default => null,
+                    };
+                }
+            });
+        }
+
+        // Sortable columns are whitelisted by the validation above; default to
+        // newest first (the old ->latest()).
+        $query->orderBy($validated['sort_by'] ?? 'created_at', $validated['sort_dir'] ?? 'desc');
+
+        $paginator = $query->paginate(
+            perPage: $validated['per_page'] ?? 25,
+            page: $validated['page'] ?? 1,
+        );
+
+        // Explicit envelope: JsonResource::withoutWrapping() is on globally, so
+        // return the resolved rows plus the total the data table needs.
+        return response()->json([
+            'data' => UserResource::collection($paginator->getCollection())->resolve($request),
+            'total' => $paginator->total(),
+        ]);
     }
 
     public function store(StoreUserRequest $request, InvitationService $invitations): JsonResponse

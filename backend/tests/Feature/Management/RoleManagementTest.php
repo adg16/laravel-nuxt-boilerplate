@@ -103,4 +103,44 @@ class RoleManagementTest extends TestCase
 
         $this->assertDatabaseMissing('roles', ['id' => $role->id]);
     }
+
+    public function test_roles_list_paginates_and_reports_the_total(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        for ($i = 0; $i < 5; $i++) {
+            Role::create(['name' => "role-{$i}", 'guard_name' => 'web']);
+        }
+        $this->loginAs($admin);
+
+        $expected = Role::count();
+        $response = $this->getJson('/api/roles?per_page=3&page=1')
+            ->assertOk()
+            ->assertJsonCount(3, 'data');
+
+        $this->assertSame($expected, $response->json('total'));
+    }
+
+    public function test_roles_list_filters_by_name(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        Role::create(['name' => 'editor', 'guard_name' => 'web']);
+        $this->loginAs($admin);
+
+        $this->getJson('/api/roles?name=edit')
+            ->assertOk()
+            ->assertJsonPath('total', 1)
+            ->assertJsonPath('data.0.name', 'editor');
+    }
+
+    public function test_roles_list_filters_by_permission(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        Role::create(['name' => 'settings-viewer', 'guard_name' => 'web'])->syncPermissions(['settings.view']);
+        Role::create(['name' => 'empty-role', 'guard_name' => 'web']);
+        $this->loginAs($admin);
+
+        $names = collect($this->getJson('/api/roles?permissions=settings.view')->assertOk()->json('data'))->pluck('name');
+        $this->assertTrue($names->contains('settings-viewer'));
+        $this->assertFalse($names->contains('empty-role'));
+    }
 }
