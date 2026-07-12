@@ -17,6 +17,7 @@ return [
     | env() directly in the seeder) so it resolves correctly under cached config.
     */
     'default_user' => [
+        'name' => env('DEFAULT_USER_NAME', 'Super Admin'),
         'email' => env('DEFAULT_USER_EMAIL', 'super.admin@example.com'),
         'password' => env('DEFAULT_USER_PASSWORD', 'password'),
     ],

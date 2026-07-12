@@ -74,6 +74,11 @@ const { loading: savingProfile, error: profileError, submit: submitProfile } = u
 const nameRules = [zodRule(z.string().min(1, t('validation.required')))]
 const emailRules = [zodRule(z.string().email(t('validation.email')))]
 
+// The original super-admin's display name is fixed (enforced server-side too).
+// Among users who can reach this page, `is_protected` is true only for them —
+// the System account can't sign in.
+const nameLocked = computed(() => !!auth.user?.is_protected)
+
 // Re-seed the form only when the *identity* changes (hydration / account switch),
 // not on every store reassignment — otherwise saving the profile or uploading an
 // avatar (both replace `auth.user`) would clobber unsaved edits in these fields.
@@ -213,6 +218,9 @@ async function onChangePassword() {
               autocomplete="name"
               prepend-inner-icon="mdi-account-outline"
               :rules="nameRules"
+              :disabled="nameLocked"
+              :hint="nameLocked ? $t('profile.info.nameLocked') : undefined"
+              :persistent-hint="nameLocked"
             />
 
             <v-text-field

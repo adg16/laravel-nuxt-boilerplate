@@ -95,6 +95,9 @@ class UserController extends Controller
 
     public function store(StoreUserRequest $request, InvitationService $invitations): JsonResponse
     {
+        $roles = $request->input('roles', []);
+        $this->guardSuperAdminAssignment($request, $roles);
+
         $setPassword = $request->creationMethod() === UserCreationMode::SetPassword;
 
         $user = User::create([
@@ -105,7 +108,7 @@ class UserController extends Controller
             'password' => Hash::make($setPassword ? $request->string('password') : Str::random(40)),
         ]);
 
-        $user->syncRoles($request->input('roles', []));
+        $user->syncRoles($roles);
 
         if ($setPassword) {
             // The admin set the credentials — the user is active immediately, no
@@ -121,9 +124,10 @@ class UserController extends Controller
 
     public function show(Request $request, User $user): UserResource
     {
-        // A non-super-admin can't view a protected account even by guessing its
-        // id — 404 (not 403) so we don't confirm the account exists.
-        if ($user->isProtected() && ! $request->user()->hasRole('super-admin')) {
+        // Super-admin accounts (the System user and anyone with the role) are
+        // invisible to non-super-admins even by guessing an id — 404, matching
+        // the list filter, so we don't confirm the account exists.
+        if ($user->isRestrictedToSuperAdmins() && ! $request->user()->hasRole('super-admin')) {
             abort(404);
         }
 
@@ -132,14 +136,18 @@ class UserController extends Controller
 
     public function update(UpdateUserRequest $request, User $user): UserResource
     {
+        $this->guardSuperAdminManagement($request, $user);
         $this->guardProtected($user);
+
+        $roles = $request->input('roles', []);
+        $this->guardSuperAdminAssignment($request, $roles);
 
         $user->update([
             'name' => $request->string('name'),
             'email' => $request->string('email'),
         ]);
 
-        $user->syncRoles($request->input('roles', []));
+        $user->syncRoles($roles);
 
         return UserResource::make($user->load('roles'));
     }
@@ -152,6 +160,7 @@ class UserController extends Controller
             ]);
         }
 
+        $this->guardSuperAdminManagement($request, $user);
         $this->guardProtected($user);
 
         $user->delete();
@@ -166,8 +175,9 @@ class UserController extends Controller
      * reset is legitimate. When two_factor_mode is Required, the user simply
      * re-enrolls on their next sign-in (the forced-setup gate takes over).
      */
-    public function resetTwoFactor(User $user): JsonResponse
+    public function resetTwoFactor(Request $request, User $user): JsonResponse
     {
+        $this->guardSuperAdminManagement($request, $user);
         $this->guardProtected($user);
 
         // Base disable action clears secret/recovery/confirmed for either method;
@@ -191,6 +201,7 @@ class UserController extends Controller
             ]);
         }
 
+        $this->guardSuperAdminManagement($request, $user);
         $this->guardProtected($user);
 
         $user->deactivate();
@@ -199,8 +210,9 @@ class UserController extends Controller
     }
 
     /** Reactivate a previously deactivated user. */
-    public function activate(User $user): JsonResponse
+    public function activate(Request $request, User $user): JsonResponse
     {
+        $this->guardSuperAdminManagement($request, $user);
         $this->guardProtected($user);
 
         $user->activate();
@@ -232,6 +244,37 @@ class UserController extends Controller
         if ($user->isProtected()) {
             throw ValidationException::withMessages([
                 'user' => [__('management.cannot_modify_protected_user')],
+            ]);
+        }
+    }
+
+    /**
+     * Only a super-admin may manage another super-admin account. The original
+     * super-admin and System are locked outright (guardProtected); users merely
+     * granted the role can be managed, but only by a super-admin — so a
+     * `users.manage` admin can't touch (or demote) a super-admin.
+     */
+    private function guardSuperAdminManagement(Request $request, User $user): void
+    {
+        if ($user->hasRole('super-admin') && ! $request->user()->hasRole('super-admin')) {
+            throw ValidationException::withMessages([
+                'user' => [__('management.cannot_manage_super_admin')],
+            ]);
+        }
+    }
+
+    /**
+     * Only a super-admin may grant the super-admin role — otherwise a user with
+     * `users.manage` could escalate an account (or themselves) past their own
+     * privileges by crafting the request directly.
+     *
+     * @param  array<int, string>  $roles
+     */
+    private function guardSuperAdminAssignment(Request $request, array $roles): void
+    {
+        if (in_array('super-admin', $roles, true) && ! $request->user()->hasRole('super-admin')) {
+            throw ValidationException::withMessages([
+                'roles' => [__('management.cannot_assign_super_admin')],
             ]);
         }
     }

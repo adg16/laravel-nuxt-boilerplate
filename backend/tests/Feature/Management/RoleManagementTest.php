@@ -112,7 +112,8 @@ class RoleManagementTest extends TestCase
         }
         $this->loginAs($admin);
 
-        $expected = Role::count();
+        // The admin (non-super-admin) can't see the super-admin role.
+        $expected = Role::where('name', '!=', 'super-admin')->count();
         $response = $this->getJson('/api/roles?per_page=3&page=1')
             ->assertOk()
             ->assertJsonCount(3, 'data');
@@ -130,6 +131,34 @@ class RoleManagementTest extends TestCase
             ->assertOk()
             ->assertJsonPath('total', 1)
             ->assertJsonPath('data.0.name', 'editor');
+    }
+
+    public function test_super_admin_role_is_hidden_from_non_super_admins(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $this->loginAs($admin);
+
+        $names = collect($this->getJson('/api/roles')->assertOk()->json('data'))->pluck('name');
+        $this->assertFalse($names->contains('super-admin'));
+        $this->assertTrue($names->contains('admin'));
+    }
+
+    public function test_a_super_admin_sees_the_super_admin_role(): void
+    {
+        $super = User::factory()->create()->assignRole('super-admin');
+        $this->loginAs($super);
+
+        $names = collect($this->getJson('/api/roles')->assertOk()->json('data'))->pluck('name');
+        $this->assertTrue($names->contains('super-admin'));
+    }
+
+    public function test_a_non_super_admin_cannot_view_the_super_admin_role_by_id(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $superRole = Role::findByName('super-admin', 'web');
+        $this->loginAs($admin);
+
+        $this->getJson("/api/roles/{$superRole->id}")->assertNotFound();
     }
 
     public function test_roles_list_filters_by_permission(): void

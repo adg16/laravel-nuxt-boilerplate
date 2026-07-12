@@ -3,6 +3,7 @@
 namespace App\Http\Requests\User;
 
 use App\Enums\UserCreationMode;
+use App\Rules\NotReservedName;
 use App\Services\Settings;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -17,7 +18,7 @@ class StoreUserRequest extends FormRequest
     public function rules(): array
     {
         $rules = [
-            'name' => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255', new NotReservedName],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
             'roles' => ['array'],
             'roles.*' => ['string', 'exists:roles,name'],

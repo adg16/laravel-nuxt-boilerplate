@@ -5,7 +5,6 @@ export const PERMISSIONS = {
   UsersManage: 'users.manage',
   RolesView: 'roles.view',
   RolesManage: 'roles.manage',
-  PermissionsView: 'permissions.view',
   SettingsView: 'settings.view',
   SettingsManage: 'settings.manage'
 } as const

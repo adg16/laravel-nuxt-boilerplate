@@ -54,6 +54,78 @@ class ProfileTest extends TestCase
             ->assertJsonValidationErrors('email');
     }
 
+    public function test_default_super_admin_cannot_change_their_name_but_can_change_other_fields(): void
+    {
+        $user = User::factory()->protected()->create([
+            'email' => config('users.default_user.email'),
+            'name' => 'Root Admin',
+        ]);
+
+        // Name change is rejected…
+        $this->actingAs($user)
+            ->putJson('/api/user/profile-information', [
+                'name' => 'New Name',
+                'email' => $user->email,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('name');
+
+        // …but changing the email (name unchanged) is allowed.
+        $this->actingAs($user)
+            ->putJson('/api/user/profile-information', [
+                'name' => 'Root Admin',
+                'email' => 'newmail@example.com',
+            ])
+            ->assertOk();
+
+        $this->assertSame('Root Admin', $user->fresh()->name);
+        $this->assertSame('newmail@example.com', $user->fresh()->email);
+    }
+
+    public function test_protection_and_name_lock_survive_an_email_change(): void
+    {
+        // Regression: protection is a durable flag, not derived from the email —
+        // so changing the email can't strip it.
+        $user = User::factory()->protected()->create([
+            'email' => config('users.default_user.email'),
+            'name' => config('users.default_user.name'),
+        ]);
+
+        // Change the email (keeping the locked name) — allowed.
+        $this->actingAs($user)
+            ->putJson('/api/user/profile-information', [
+                'name' => $user->name,
+                'email' => 'moved@example.com',
+            ])
+            ->assertOk();
+
+        $user->refresh();
+        $this->assertSame('moved@example.com', $user->email);
+        $this->assertTrue($user->isProtected());
+
+        // The name is still locked even after the email moved.
+        $this->actingAs($user)
+            ->putJson('/api/user/profile-information', [
+                'name' => 'Renamed',
+                'email' => $user->email,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('name');
+    }
+
+    public function test_a_user_cannot_take_the_reserved_super_admin_name_via_profile(): void
+    {
+        $user = User::factory()->create(['name' => 'Regular', 'email' => 'reg@example.com']);
+
+        $this->actingAs($user)
+            ->putJson('/api/user/profile-information', [
+                'name' => 'Super Admin',
+                'email' => $user->email,
+            ])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('name');
+    }
+
     public function test_profile_update_allows_keeping_the_same_email(): void
     {
         $user = User::factory()->create(['email' => 'me@example.com']);

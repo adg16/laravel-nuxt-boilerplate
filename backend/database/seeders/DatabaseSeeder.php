@@ -28,21 +28,26 @@ class DatabaseSeeder extends Seeder
         // actor — resolve it later via User::system().
         // Seeded accounts didn't go through the invite flow — mark them verified
         // so they don't show as "pending" in the UI.
-        User::firstOrCreate(
+        // `is_protected` isn't mass-assignable (not in #[Fillable]) — forceFill it.
+        // Idempotent: also (re)sets the flag on an already-seeded account.
+        $system = User::firstOrCreate(
             ['email' => config('app.system_user_email')],
             [
-                'name' => 'System',
+                'name' => config('app.system_user_name'),
                 'password' => Hash::make(Str::random(40)),
             ]
-        )->markVerified();
+        );
+        $system->forceFill(['is_protected' => true])->save();
+        $system->markVerified();
 
         $admin = User::firstOrCreate(
             ['email' => config('users.default_user.email')],
             [
-                'name' => 'Super Admin',
+                'name' => config('users.default_user.name'),
                 'password' => bcrypt(config('users.default_user.password')),
             ]
         );
+        $admin->forceFill(['is_protected' => true])->save();
         $admin->markVerified();
         $admin->assignRole('super-admin');
     }

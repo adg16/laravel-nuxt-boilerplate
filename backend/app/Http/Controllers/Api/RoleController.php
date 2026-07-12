@@ -37,6 +37,13 @@ class RoleController extends Controller
                 ->selectRaw('count(*)')
                 ->whereColumn($this->rolePivotKey(), 'roles.id')]);
 
+        // The super-admin role is only visible to a super-admin. Since every role
+        // dropdown in the app sources this endpoint, hiding it here also keeps it
+        // out of those selects for everyone else.
+        if (! $request->user()->hasRole('super-admin')) {
+            $query->where('name', '!=', 'super-admin');
+        }
+
         if (($name = trim((string) ($validated['name'] ?? ''))) !== '') {
             $query->where('name', 'like', '%'.$this->escapeLike($name).'%');
         }
@@ -74,8 +81,14 @@ class RoleController extends Controller
         return RoleResource::make($role->load('permissions'))->response()->setStatusCode(201);
     }
 
-    public function show(Role $role): RoleResource
+    public function show(Request $request, Role $role): RoleResource
     {
+        // A non-super-admin can't view the super-admin role even by guessing its
+        // id — 404 (not 403) so we don't confirm it exists.
+        if ($role->name === 'super-admin' && ! $request->user()->hasRole('super-admin')) {
+            abort(404);
+        }
+
         $role->load('permissions');
         $role->users_count = DB::table($this->pivotTable())
             ->where($this->rolePivotKey(), $role->id)

@@ -16,6 +16,5 @@ export const navItems: NavItem[] = [
   { titleKey: 'nav.dashboard', icon: 'mdi-view-dashboard-outline', to: '/' },
   { titleKey: 'nav.users', icon: 'mdi-account-group-outline', to: '/users', permission: PERMISSIONS.UsersView },
   { titleKey: 'nav.roles', icon: 'mdi-shield-account-outline', to: '/roles', permission: PERMISSIONS.RolesView },
-  { titleKey: 'nav.permissions', icon: 'mdi-key-outline', to: '/permissions', permission: PERMISSIONS.PermissionsView },
   { titleKey: 'nav.settings', icon: 'mdi-cog-outline', to: '/settings', permission: PERMISSIONS.SettingsView }
 ]

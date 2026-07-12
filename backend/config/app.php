@@ -96,6 +96,10 @@ return [
     */
     'system_user_email' => env('SYSTEM_USER_EMAIL', 'system@example.com'),
 
+    // The System account's display name — also a reserved name no other account
+    // may use (see App\Rules\NotReservedName).
+    'system_user_name' => env('SYSTEM_USER_NAME', 'System'),
+
     'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),

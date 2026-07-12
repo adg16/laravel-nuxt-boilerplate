@@ -19,7 +19,6 @@
     "dashboard": "Dashboard",
     "users": "Users",
     "roles": "Roles",
-    "permissions": "Permissions",
     "settings": "Settings",
     "security": "Security",
     "profile": "Profile",
@@ -62,9 +61,7 @@
     "status": "Status",
     "description": "Description",
     "users": "Users",
-    "permission": "Permission",
     "permissions": "Permissions",
-    "usedBy": "Used by",
     "actions": "Actions"
   },
   "status": {
@@ -244,7 +241,8 @@
     "info": {
       "title": "Profile information",
       "subtitle": "Update your name and email address.",
-      "saved": "Profile updated."
+      "saved": "Profile updated.",
+      "nameLocked": "The super administrator display name can't be changed."
     },
     "password": {
       "title": "Change password",
@@ -306,9 +304,6 @@
     "recoveryRegenerated": "New recovery codes generated."
   },
   "permissions": {
-    "readonlyHint": "Permissions are defined in code and can't be edited here — assign them to roles on the Roles page.",
-    "systemLocked": "Defined in code",
-    "unused": "Not used by any role",
     "actions": {
       "view": "View",
       "manage": "Manage"
@@ -316,7 +311,6 @@
     "resources": {
       "users": "Users",
       "roles": "Roles",
-      "permissions": "Permissions",
       "settings": "Settings"
     }
   }

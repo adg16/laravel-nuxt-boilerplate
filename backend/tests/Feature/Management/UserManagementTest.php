@@ -138,6 +138,78 @@ class UserManagementTest extends TestCase
         Notification::assertSentTo($jane, UserInvitation::class);
     }
 
+    public function test_non_super_admin_cannot_assign_the_super_admin_role(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $this->loginAs($admin);
+
+        $this->postJson('/api/users', [
+            'name' => 'Escalate',
+            'email' => 'escalate@example.com',
+            'roles' => ['super-admin'],
+        ])->assertStatus(422)->assertJsonValidationErrors('roles');
+
+        $this->assertDatabaseMissing('users', ['email' => 'escalate@example.com']);
+    }
+
+    public function test_super_admin_can_assign_the_super_admin_role(): void
+    {
+        Notification::fake();
+        $super = User::factory()->create()->assignRole('super-admin');
+        $this->loginAs($super);
+
+        $this->postJson('/api/users', [
+            'name' => 'New Super',
+            'email' => 'newsuper@example.com',
+            'roles' => ['super-admin'],
+        ])->assertCreated();
+
+        $this->assertTrue(User::whereEmail('newsuper@example.com')->firstOrFail()->hasRole('super-admin'));
+    }
+
+    public function test_cannot_create_a_user_with_the_reserved_super_admin_name(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $this->loginAs($admin);
+
+        // Case-insensitive — "super admin" is just as reserved as "Super Admin" —
+        // and the message reports the canonical reserved name.
+        $this->postJson('/api/users', [
+            'name' => 'super admin',
+            'email' => 'imposter@example.com',
+            'roles' => [],
+        ])->assertStatus(422)->assertJsonValidationErrors(['name' => 'The name "Super Admin" is reserved']);
+
+        $this->assertDatabaseMissing('users', ['email' => 'imposter@example.com']);
+    }
+
+    public function test_cannot_rename_a_user_to_the_reserved_super_admin_name(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $target = User::factory()->create()->assignRole('viewer');
+        $this->loginAs($admin);
+
+        $this->putJson("/api/users/{$target->id}", [
+            'name' => 'Super Admin',
+            'email' => $target->email,
+            'roles' => ['viewer'],
+        ])->assertStatus(422)->assertJsonValidationErrors('name');
+    }
+
+    public function test_cannot_create_a_user_with_the_reserved_system_name(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $this->loginAs($admin);
+
+        $this->postJson('/api/users', [
+            'name' => 'system',
+            'email' => 'sys@example.com',
+            'roles' => [],
+        ])->assertStatus(422)->assertJsonValidationErrors('name');
+
+        $this->assertDatabaseMissing('users', ['email' => 'sys@example.com']);
+    }
+
     public function test_admin_can_update_a_users_roles(): void
     {
         $admin = User::factory()->create()->assignRole('admin');
@@ -180,7 +252,7 @@ class UserManagementTest extends TestCase
         $this->assertDatabaseHas('users', ['id' => $admin->id]);
     }
 
-    public function test_a_super_admin_user_cannot_be_deleted(): void
+    public function test_a_non_super_admin_cannot_delete_a_super_admin(): void
     {
         $admin = User::factory()->create()->assignRole('admin');
         $super = User::factory()->create()->assignRole('super-admin');
@@ -191,6 +263,42 @@ class UserManagementTest extends TestCase
             ->assertJsonValidationErrors('user');
 
         $this->assertDatabaseHas('users', ['id' => $super->id]);
+    }
+
+    public function test_a_super_admin_can_manage_an_assigned_super_admin(): void
+    {
+        $actor = User::factory()->create()->assignRole('super-admin');
+        $assigned = User::factory()->create(['name' => 'Assigned Super'])->assignRole('super-admin');
+        $this->loginAs($actor);
+
+        // Editable, unlike the original super-admin…
+        $this->putJson("/api/users/{$assigned->id}", [
+            'name' => 'Renamed Super',
+            'email' => $assigned->email,
+            'roles' => ['super-admin'],
+        ])->assertOk()->assertJsonPath('name', 'Renamed Super');
+
+        // …and deletable.
+        $this->deleteJson("/api/users/{$assigned->id}")->assertOk();
+        $this->assertDatabaseMissing('users', ['id' => $assigned->id]);
+    }
+
+    public function test_the_default_super_admin_cannot_be_modified_even_by_a_super_admin(): void
+    {
+        $actor = User::factory()->create()->assignRole('super-admin');
+        $default = User::factory()->protected()->create(['email' => config('users.default_user.email')])->assignRole('super-admin');
+        $this->loginAs($actor);
+
+        $this->putJson("/api/users/{$default->id}", [
+            'name' => 'Hijack',
+            'email' => $default->email,
+            'roles' => ['super-admin'],
+        ])->assertStatus(422)->assertJsonValidationErrors('user');
+
+        $this->deleteJson("/api/users/{$default->id}")
+            ->assertStatus(422)->assertJsonValidationErrors('user');
+
+        $this->assertDatabaseHas('users', ['id' => $default->id]);
     }
 
     public function test_protected_accounts_are_hidden_from_non_super_admins(): void
@@ -233,7 +341,7 @@ class UserManagementTest extends TestCase
     public function test_a_super_admin_can_view_a_protected_account_by_id(): void
     {
         $super = User::factory()->create()->assignRole('super-admin');
-        $system = User::factory()->create(['email' => config('app.system_user_email')]);
+        $system = User::factory()->protected()->create(['email' => config('app.system_user_email')]);
         $this->loginAs($super);
 
         $this->getJson("/api/users/{$system->id}")
@@ -245,7 +353,7 @@ class UserManagementTest extends TestCase
     public function test_the_system_account_cannot_be_edited_or_deleted(): void
     {
         $admin = User::factory()->create()->assignRole('admin');
-        $system = User::factory()->create(['email' => config('app.system_user_email')]);
+        $system = User::factory()->protected()->create(['email' => config('app.system_user_email')]);
         $this->loginAs($admin);
 
         $this->putJson("/api/users/{$system->id}", [
@@ -314,6 +422,28 @@ class UserManagementTest extends TestCase
         $this->assertTrue($super->fresh()->isActive());
     }
 
+    public function test_a_non_super_admin_cannot_reset_a_super_admins_two_factor(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $super = User::factory()->create()->assignRole('super-admin');
+        $this->loginAs($admin);
+
+        $this->deleteJson("/api/users/{$super->id}/two-factor")
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('user');
+    }
+
+    public function test_a_non_super_admin_cannot_activate_a_super_admin(): void
+    {
+        $admin = User::factory()->create()->assignRole('admin');
+        $super = User::factory()->create()->assignRole('super-admin');
+        $this->loginAs($admin);
+
+        $this->postJson("/api/users/{$super->id}/activate")
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('user');
+    }
+
     public function test_a_deactivated_user_cannot_log_in(): void
     {
         $user = User::factory()->create();
@@ -343,7 +473,7 @@ class UserManagementTest extends TestCase
             ->assertJsonPath('code', 'account_deactivated');
     }
 
-    public function test_a_super_admin_user_cannot_be_edited(): void
+    public function test_a_non_super_admin_cannot_edit_a_super_admin(): void
     {
         $admin = User::factory()->create()->assignRole('admin');
         $super = User::factory()->create(['name' => 'Root'])->assignRole('super-admin');

@@ -68,7 +68,7 @@ class AvatarController extends Controller
      */
     public function show(Request $request, User $user): StreamedResponse
     {
-        if ($user->isProtected() && ! $request->user()->hasRole('super-admin')) {
+        if ($user->isRestrictedToSuperAdmins() && ! $request->user()->hasRole('super-admin')) {
             abort(404);
         }
 

@@ -26,8 +26,9 @@ class PermissionCatalogTest extends TestCase
             ->assertOk();
     }
 
-    public function test_user_with_permissions_view_sees_the_catalog(): void
+    public function test_user_with_roles_view_sees_the_catalog(): void
     {
+        // The catalog feeds the role editor, so it rides on roles.view.
         $viewer = User::factory()->create()->assignRole('viewer');
         $this->loginAs($viewer);
 
@@ -37,7 +38,7 @@ class PermissionCatalogTest extends TestCase
             ->assertJsonPath('0.roles', fn ($roles) => is_array($roles));
     }
 
-    public function test_user_without_permissions_view_is_forbidden(): void
+    public function test_user_without_roles_view_is_forbidden(): void
     {
         $user = User::factory()->create(); // no roles
         $this->loginAs($user);

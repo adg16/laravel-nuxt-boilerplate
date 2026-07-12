@@ -102,16 +102,15 @@ Route::middleware(['auth:sanctum', EnsureActive::class])->group(function () {
         Route::middleware('permission:'.Permission::RolesView->value)->group(function () {
             Route::get('roles', [RoleController::class, 'index']);
             Route::get('roles/{role}', [RoleController::class, 'show']);
+            // Read-only permission catalog — only consumed by the role editor and
+            // its permission filter, so it rides on the same view permission.
+            Route::get('permissions', PermissionController::class);
         });
         Route::middleware('permission:'.Permission::RolesManage->value)->group(function () {
             Route::post('roles', [RoleController::class, 'store']);
             Route::put('roles/{role}', [RoleController::class, 'update']);
             Route::delete('roles/{role}', [RoleController::class, 'destroy']);
         });
-
-        // Read-only permission catalog.
-        Route::get('permissions', PermissionController::class)
-            ->middleware('permission:'.Permission::PermissionsView->value);
 
         // Application settings — code-defined keys, editable values.
         Route::middleware('permission:'.Permission::SettingsView->value)

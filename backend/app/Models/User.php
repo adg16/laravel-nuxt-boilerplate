@@ -62,6 +62,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'deactivated_at' => 'datetime',
+            'is_protected' => 'boolean',
             'password' => 'hashed',
         ];
     }
@@ -130,10 +131,25 @@ class User extends Authenticatable
     }
 
     /**
-     * Protected accounts can't be edited or deleted through the management UI /
-     * API: the super-admin (the Gate::before bypass) and the System account.
+     * Protected accounts can't be edited or deleted by anyone — not even another
+     * super-admin: the seeded super-admin and the System account, flagged by
+     * `DatabaseSeeder`. A durable column, not derived from the (mutable) email, so
+     * the super-admin changing their own email can't strip its protection. A user
+     * merely *assigned* the super-admin role is not protected — a super-admin can
+     * still manage them.
      */
     public function isProtected(): bool
+    {
+        return (bool) $this->is_protected;
+    }
+
+    /**
+     * Accounts only a super-admin may see: the System user and every super-admin
+     * (the original one and anyone granted the role). Mirrors the users-list
+     * filter; callers 404 these for non-super-admins so their existence isn't
+     * leaked by id.
+     */
+    public function isRestrictedToSuperAdmins(): bool
     {
         return $this->isSystem() || $this->hasRole('super-admin');
     }

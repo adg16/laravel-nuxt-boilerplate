@@ -23,7 +23,6 @@ enum Permission: string
     case UsersManage = 'users.manage';
     case RolesView = 'roles.view';
     case RolesManage = 'roles.manage';
-    case PermissionsView = 'permissions.view';
     case SettingsView = 'settings.view';
     case SettingsManage = 'settings.manage';
 
