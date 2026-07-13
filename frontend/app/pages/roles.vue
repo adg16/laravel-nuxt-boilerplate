@@ -139,7 +139,9 @@ onMounted(loadPermissions)
 const dialog = ref(false)
 const formRef = ref<VForm>()
 const editing = ref<Role | null>(null)
-const { loading: saving, error, submit } = useSubmit()
+// The dialog's name field renders server (422) errors inline via :error-messages;
+// hasFieldErrors gates the redundant bottom summary alert.
+const { loading: saving, error, fieldErrors, hasFieldErrors, clearFieldError, submit } = useSubmit()
 const state = reactive({ name: '', permissions: [] as string[] })
 
 const nameRules = [zodRule(z.string().min(1, t('validation.required')))]
@@ -149,6 +151,7 @@ function openCreate() {
   state.name = ''
   state.permissions = []
   error.value = ''
+  clearFieldError()
   dialog.value = true
 }
 
@@ -157,6 +160,7 @@ function openEdit(role: Role) {
   state.name = role.name
   state.permissions = [...role.permissions]
   error.value = ''
+  clearFieldError()
   dialog.value = true
 }
 
@@ -333,6 +337,8 @@ async function onDelete() {
           v-model="state.name"
           :label="$t('fields.roleName')"
           :rules="nameRules"
+          :error-messages="fieldErrors.name"
+          @update:model-value="clearFieldError('name')"
         />
 
         <div class="text-title-small mt-4 mb-2">
@@ -360,7 +366,7 @@ async function onDelete() {
         </div>
 
         <v-alert
-          v-if="error"
+          v-if="error && !hasFieldErrors"
           type="error"
           variant="tonal"
           density="comfortable"

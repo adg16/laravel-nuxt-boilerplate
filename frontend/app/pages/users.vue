@@ -176,7 +176,9 @@ onMounted(loadRoleOptions)
 const dialog = ref(false)
 const formRef = ref<VForm>()
 const editing = ref<User | null>(null)
-const { loading: saving, error, submit } = useSubmit()
+// Dialog fields render server (422) errors inline via :error-messages;
+// hasFieldErrors gates the redundant bottom summary alert.
+const { loading: saving, error, fieldErrors, hasFieldErrors, clearFieldError, submit } = useSubmit()
 const state = reactive({
   name: '',
   email: '',
@@ -210,6 +212,7 @@ function openCreate() {
   state.password = ''
   state.password_confirmation = ''
   error.value = ''
+  clearFieldError()
   dialog.value = true
 }
 
@@ -219,6 +222,7 @@ function openEdit(user: User) {
   state.email = user.email
   state.roles = [...user.roles]
   error.value = ''
+  clearFieldError()
   dialog.value = true
 }
 
@@ -535,12 +539,16 @@ async function onDeactivate() {
           v-model="state.name"
           :label="$t('fields.name')"
           :rules="nameRules"
+          :error-messages="fieldErrors.name"
+          @update:model-value="clearFieldError('name')"
         />
         <v-text-field
           v-model="state.email"
           type="email"
           :label="$t('fields.email')"
           :rules="emailRules"
+          :error-messages="fieldErrors.email"
+          @update:model-value="clearFieldError('email')"
         />
 
         <!-- Access method (create only). The toggle shows only when the app
@@ -581,6 +589,8 @@ async function onDeactivate() {
             placeholder="••••••••"
             prepend-inner-icon="mdi-lock-outline"
             :rules="passwordRules"
+            :error-messages="fieldErrors.password"
+            @update:model-value="clearFieldError('password')"
           />
           <PasswordInput
             v-if="isSetPassword"
@@ -600,6 +610,8 @@ async function onDeactivate() {
           multiple
           chips
           closable-chips
+          :error-messages="fieldErrors.roles"
+          @update:model-value="clearFieldError('roles')"
         />
 
         <p
@@ -610,7 +622,7 @@ async function onDeactivate() {
         </p>
 
         <v-alert
-          v-if="error"
+          v-if="error && !hasFieldErrors"
           type="error"
           variant="tonal"
           density="comfortable"
