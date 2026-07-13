@@ -59,28 +59,35 @@ const total = ref(0)
 const loading = ref(false)
 
 // Server-side filter panel: free-text name/email, role multiselect (any of the
-// picked roles), and a single status. Changing a filter refetches from page 1.
+// picked roles), and two independent status axes. Values OR within each field
+// and AND across fields (matching the backend). Changing a filter refetches from
+// page 1.
 const filters = reactive({
   name: '',
   email: '',
   roles: [] as string[],
-  status: [] as string[]
+  accountStatus: [] as string[],
+  verificationStatus: [] as string[]
 })
 
-const STATUS_VALUES = ['active', 'inactive', 'verified', 'unverified'] as const
-const statusOptions = computed(() =>
-  STATUS_VALUES.map(value => ({ title: t(`users.status.${value}`), value }))
+const accountStatusOptions = computed(() =>
+  (['active', 'inactive'] as const).map(value => ({ title: t(`users.status.${value}`), value }))
+)
+const verificationStatusOptions = computed(() =>
+  (['verified', 'unverified'] as const).map(value => ({ title: t(`users.status.${value}`), value }))
 )
 
 const hasActiveFilters = computed(() =>
-  !!filters.name || !!filters.email || filters.roles.length > 0 || filters.status.length > 0
+  !!filters.name || !!filters.email || filters.roles.length > 0
+  || filters.accountStatus.length > 0 || filters.verificationStatus.length > 0
 )
 
 function clearFilters() {
   filters.name = ''
   filters.email = ''
   filters.roles = []
-  filters.status = []
+  filters.accountStatus = []
+  filters.verificationStatus = []
 }
 
 // Only name/email are server-sortable (the backend whitelists those columns);
@@ -89,7 +96,8 @@ const headers = computed(() => [
   { title: t('table.name'), key: 'name' },
   { title: t('table.email'), key: 'email' },
   { title: t('table.roles'), key: 'roles', sortable: false },
-  { title: t('table.status'), key: 'status', sortable: false },
+  { title: t('table.account'), key: 'account', sortable: false },
+  { title: t('table.verification'), key: 'verification', sortable: false },
   ...(canManage.value
     ? [{ title: t('table.actions'), key: 'actions', sortable: false, align: 'end' as const }]
     : [])
@@ -132,7 +140,8 @@ async function load() {
       name: filters.name,
       email: filters.email,
       roles: filters.roles,
-      status: filters.status
+      accountStatus: filters.accountStatus,
+      verificationStatus: filters.verificationStatus
     })
     if (seq !== loadSeq) return
     users.value = result.data
@@ -398,9 +407,20 @@ async function onDeactivate() {
         hide-details
       />
       <v-autocomplete
-        v-model="filters.status"
-        :label="$t('table.status')"
-        :items="statusOptions"
+        v-model="filters.accountStatus"
+        :label="$t('table.account')"
+        :items="accountStatusOptions"
+        density="comfortable"
+        multiple
+        chips
+        closable-chips
+        clearable
+        hide-details
+      />
+      <v-autocomplete
+        v-model="filters.verificationStatus"
+        :label="$t('table.verification')"
+        :items="verificationStatusOptions"
         density="comfortable"
         multiple
         chips
@@ -459,25 +479,26 @@ async function onDeactivate() {
           >—</span>
         </template>
 
-        <template #[`item.status`]="{ item }">
-          <div class="d-flex flex-wrap ga-1">
-            <v-chip
-              :color="item.is_active ? 'success' : 'error'"
-              :prepend-icon="item.is_active ? 'mdi-account-check-outline' : 'mdi-account-off-outline'"
-              size="small"
-              variant="tonal"
-            >
-              {{ item.is_active ? $t('users.status.active') : $t('users.deactivated') }}
-            </v-chip>
-            <v-chip
-              :color="item.is_verified ? 'success' : 'warning'"
-              :prepend-icon="item.is_verified ? 'mdi-check-circle-outline' : 'mdi-clock-outline'"
-              size="small"
-              variant="tonal"
-            >
-              {{ item.is_verified ? $t('users.verified') : $t('users.pending') }}
-            </v-chip>
-          </div>
+        <template #[`item.account`]="{ item }">
+          <v-chip
+            :color="item.is_active ? 'success' : 'error'"
+            :prepend-icon="item.is_active ? 'mdi-account-check-outline' : 'mdi-account-off-outline'"
+            size="small"
+            variant="tonal"
+          >
+            {{ item.is_active ? $t('users.status.active') : $t('users.status.inactive') }}
+          </v-chip>
+        </template>
+
+        <template #[`item.verification`]="{ item }">
+          <v-chip
+            :color="item.is_verified ? 'success' : 'warning'"
+            :prepend-icon="item.is_verified ? 'mdi-check-circle-outline' : 'mdi-clock-outline'"
+            size="small"
+            variant="tonal"
+          >
+            {{ item.is_verified ? $t('users.verified') : $t('users.pending') }}
+          </v-chip>
         </template>
 
         <template

@@ -49,6 +49,6 @@ class DatabaseSeeder extends Seeder
         );
         $admin->forceFill(['is_protected' => true])->save();
         $admin->markVerified();
-        $admin->assignRole('super-admin');
+        $admin->assignRole('Super Admin');
     }
 }

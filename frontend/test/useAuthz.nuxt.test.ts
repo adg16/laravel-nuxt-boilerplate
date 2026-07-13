@@ -18,31 +18,31 @@ describe('useAuthz', () => {
 
   it('grants a super-admin every permission regardless of explicit grants', () => {
     const auth = useAuthStore()
-    auth.user = userWith(['super-admin'], [])
+    auth.user = userWith(['Super Admin'], [])
     const { can, hasRole } = useAuthz()
 
     expect(can('users.manage')).toBe(true)
     expect(can('anything.at.all')).toBe(true)
-    expect(hasRole('super-admin')).toBe(true)
+    expect(hasRole('Super Admin')).toBe(true)
   })
 
   it('limits a normal user to their explicit permissions', () => {
     const auth = useAuthStore()
-    auth.user = userWith(['viewer'], ['users.view'])
+    auth.user = userWith(['Viewer'], ['users.view'])
     const { can, canAny, hasRole } = useAuthz()
 
     expect(can('users.view')).toBe(true)
     expect(can('users.manage')).toBe(false)
     expect(canAny(['users.manage', 'users.view'])).toBe(true)
     expect(canAny(['users.manage', 'roles.manage'])).toBe(false)
-    expect(hasRole('viewer')).toBe(true)
-    expect(hasRole('admin')).toBe(false)
+    expect(hasRole('Viewer')).toBe(true)
+    expect(hasRole('Admin')).toBe(false)
   })
 
   it('denies everything when there is no user', () => {
     const { can, hasRole } = useAuthz()
 
     expect(can('users.view')).toBe(false)
-    expect(hasRole('super-admin')).toBe(false)
+    expect(hasRole('Super Admin')).toBe(false)
   })
 })

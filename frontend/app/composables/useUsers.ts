@@ -25,7 +25,8 @@ export interface UserListParams {
   name?: string
   email?: string
   roles?: string[]
-  status?: string[]
+  accountStatus?: string[]
+  verificationStatus?: string[]
 }
 
 export interface UserListResult {
@@ -48,7 +49,8 @@ export function useUsers() {
         // Comma-joined so they survive query serialization as a single value the
         // backend splits (repeated `roles=` keys don't round-trip to a PHP array).
         roles: params.roles?.length ? params.roles.join(',') : undefined,
-        status: params.status?.length ? params.status.join(',') : undefined
+        account_status: params.accountStatus?.length ? params.accountStatus.join(',') : undefined,
+        verification_status: params.verificationStatus?.length ? params.verificationStatus.join(',') : undefined
       }
     }),
     create: (body: CreateUserPayload) => api<User>('/users', { method: 'POST', body }),

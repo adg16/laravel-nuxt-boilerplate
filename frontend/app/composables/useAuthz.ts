@@ -5,7 +5,7 @@
 // `can()` mirrors the backend's Gate::before: the `super-admin` role passes
 // every check regardless of its explicit permissions. Keep that in sync with
 // AppServiceProvider if the bypass rule ever changes.
-const SUPER_ADMIN_ROLE = 'super-admin'
+const SUPER_ADMIN_ROLE = 'Super Admin'
 
 export function useAuthz() {
   const auth = useAuthStore()

@@ -165,7 +165,7 @@ class TwoFactorTest extends TestCase
     public function test_required_mode_blocks_management_until_enrolled(): void
     {
         $this->setMode(TwoFactorMode::Required);
-        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('admin');
+        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('Admin');
         $this->loginAs($admin);
 
         // The management API is off-limits (even with permission) until enrolled.
@@ -182,7 +182,7 @@ class TwoFactorTest extends TestCase
     public function test_required_mode_allows_management_after_enrollment(): void
     {
         $this->setMode(TwoFactorMode::Required);
-        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('admin');
+        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('Admin');
         $this->enroll($admin);
         $this->loginAs($admin);
 
@@ -196,7 +196,7 @@ class TwoFactorTest extends TestCase
     public function test_admin_can_reset_another_users_two_factor(): void
     {
         $this->setMode(TwoFactorMode::Optional);
-        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('admin');
+        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('Admin');
         $target = User::factory()->create();
         $this->enroll($target);
         $this->loginAs($admin);
@@ -211,7 +211,7 @@ class TwoFactorTest extends TestCase
 
     public function test_resetting_two_factor_requires_manage_permission(): void
     {
-        $viewer = User::factory()->create(['password' => bcrypt('password')])->assignRole('viewer');
+        $viewer = User::factory()->create(['password' => bcrypt('password')])->assignRole('Viewer');
         $target = User::factory()->create();
         $this->enroll($target);
         $this->loginAs($viewer);
@@ -222,8 +222,8 @@ class TwoFactorTest extends TestCase
 
     public function test_resetting_two_factor_is_blocked_for_protected_accounts(): void
     {
-        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('admin');
-        $protected = User::factory()->create()->assignRole('super-admin');
+        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('Admin');
+        $protected = User::factory()->create()->assignRole('Super Admin');
         $this->enroll($protected);
         $this->loginAs($admin);
 
@@ -236,7 +236,7 @@ class TwoFactorTest extends TestCase
         // In Required mode a user can't disable their own active setup, but an
         // admin reset must still go through (the lockout-recovery path).
         $this->setMode(TwoFactorMode::Required);
-        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('admin');
+        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('Admin');
         $this->enroll($admin);
         $target = User::factory()->create();
         $this->enroll($target);
@@ -251,7 +251,7 @@ class TwoFactorTest extends TestCase
 
     public function test_mode_setting_rejects_unknown_values(): void
     {
-        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('admin');
+        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('Admin');
         $this->loginAs($admin);
 
         $this->putJson('/api/settings/two_factor_mode', ['value' => 'sometimes'])

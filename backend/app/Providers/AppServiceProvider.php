@@ -37,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
         // The `super-admin` role bypasses every permission check. Returning null
         // (not false) for everyone else lets normal gate/policy resolution — and
         // the explicit permissions on ordinary roles like `admin` — proceed.
-        Gate::before(fn ($user) => $user?->hasRole('super-admin') ? true : null);
+        Gate::before(fn ($user) => $user?->hasRole('Super Admin') ? true : null);
 
         // Password-reset emails must link to the SPA reset page (same origin
         // as the API — nginx fronts both), not a backend Blade route.

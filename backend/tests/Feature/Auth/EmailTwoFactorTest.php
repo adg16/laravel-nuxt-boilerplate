@@ -294,7 +294,7 @@ class EmailTwoFactorTest extends TestCase
         $this->enrollEmailDirectly($target);
         $this->assertTrue($target->fresh()->hasTwoFactorEnabled());
 
-        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('admin');
+        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('Admin');
         $this->loginAs($admin);
 
         $this->deleteJson("/api/users/{$target->id}/two-factor")->assertOk();
@@ -309,7 +309,7 @@ class EmailTwoFactorTest extends TestCase
     {
         $this->setMode(TwoFactorMode::Optional); // enroll first while not gated
         $this->setMethods(TwoFactorMethodPolicy::Both);
-        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('admin');
+        $admin = User::factory()->create(['password' => bcrypt('password')])->assignRole('Admin');
         $this->loginAs($admin);
         $this->enrollEmail($admin);
 

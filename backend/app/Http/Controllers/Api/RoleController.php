@@ -40,8 +40,8 @@ class RoleController extends Controller
         // The super-admin role is only visible to a super-admin. Since every role
         // dropdown in the app sources this endpoint, hiding it here also keeps it
         // out of those selects for everyone else.
-        if (! $request->user()->hasRole('super-admin')) {
-            $query->where('name', '!=', 'super-admin');
+        if (! $request->user()->hasRole('Super Admin')) {
+            $query->where('name', '!=', 'Super Admin');
         }
 
         if (($name = trim((string) ($validated['name'] ?? ''))) !== '') {
@@ -85,7 +85,7 @@ class RoleController extends Controller
     {
         // A non-super-admin can't view the super-admin role even by guessing its
         // id — 404 (not 403) so we don't confirm it exists.
-        if ($role->name === 'super-admin' && ! $request->user()->hasRole('super-admin')) {
+        if ($role->name === 'Super Admin' && ! $request->user()->hasRole('Super Admin')) {
             abort(404);
         }
 
@@ -132,7 +132,7 @@ class RoleController extends Controller
      */
     private function guardSuperAdmin(Role $role): void
     {
-        if ($role->name === 'super-admin') {
+        if ($role->name === 'Super Admin') {
             throw ValidationException::withMessages([
                 'role' => [__('management.cannot_modify_super_admin_role')],
             ]);

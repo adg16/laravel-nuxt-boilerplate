@@ -29,7 +29,7 @@ class PermissionCatalogTest extends TestCase
     public function test_user_with_roles_view_sees_the_catalog(): void
     {
         // The catalog feeds the role editor, so it rides on roles.view.
-        $viewer = User::factory()->create()->assignRole('viewer');
+        $viewer = User::factory()->create()->assignRole('Viewer');
         $this->loginAs($viewer);
 
         $this->getJson('/api/permissions')
@@ -48,7 +48,7 @@ class PermissionCatalogTest extends TestCase
 
     public function test_permissions_have_no_write_endpoint(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $this->loginAs($admin);
 
         // Only GET is routed; a write attempt is Method Not Allowed.

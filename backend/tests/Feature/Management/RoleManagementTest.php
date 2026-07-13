@@ -28,7 +28,7 @@ class RoleManagementTest extends TestCase
 
     public function test_user_without_manage_cannot_create_role(): void
     {
-        $viewer = User::factory()->create()->assignRole('viewer');
+        $viewer = User::factory()->create()->assignRole('Viewer');
         $this->loginAs($viewer);
 
         $this->postJson('/api/roles', ['name' => 'editor', 'permissions' => []])
@@ -39,7 +39,7 @@ class RoleManagementTest extends TestCase
 
     public function test_admin_can_create_a_role_with_permissions(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $this->loginAs($admin);
 
         $this->postJson('/api/roles', [
@@ -56,7 +56,7 @@ class RoleManagementTest extends TestCase
 
     public function test_admin_can_sync_a_roles_permissions(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $this->loginAs($admin);
         $role = Role::create(['name' => 'editor', 'guard_name' => 'web']);
 
@@ -70,9 +70,9 @@ class RoleManagementTest extends TestCase
 
     public function test_the_super_admin_role_cannot_be_modified(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $this->loginAs($admin);
-        $super = Role::findByName('super-admin', 'web');
+        $super = Role::findByName('Super Admin', 'web');
 
         $this->putJson("/api/roles/{$super->id}", ['name' => 'root', 'permissions' => []])
             ->assertStatus(422)
@@ -81,10 +81,10 @@ class RoleManagementTest extends TestCase
 
     public function test_a_role_assigned_to_users_cannot_be_deleted(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
-        User::factory()->create()->assignRole('viewer');
+        $admin = User::factory()->create()->assignRole('Admin');
+        User::factory()->create()->assignRole('Viewer');
         $this->loginAs($admin);
-        $viewer = Role::findByName('viewer', 'web');
+        $viewer = Role::findByName('Viewer', 'web');
 
         $this->deleteJson("/api/roles/{$viewer->id}")
             ->assertStatus(422)
@@ -95,7 +95,7 @@ class RoleManagementTest extends TestCase
 
     public function test_admin_can_delete_an_unused_role(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $this->loginAs($admin);
         $role = Role::create(['name' => 'temp', 'guard_name' => 'web']);
 
@@ -106,14 +106,14 @@ class RoleManagementTest extends TestCase
 
     public function test_roles_list_paginates_and_reports_the_total(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         for ($i = 0; $i < 5; $i++) {
             Role::create(['name' => "role-{$i}", 'guard_name' => 'web']);
         }
         $this->loginAs($admin);
 
         // The admin (non-super-admin) can't see the super-admin role.
-        $expected = Role::where('name', '!=', 'super-admin')->count();
+        $expected = Role::where('name', '!=', 'Super Admin')->count();
         $response = $this->getJson('/api/roles?per_page=3&page=1')
             ->assertOk()
             ->assertJsonCount(3, 'data');
@@ -123,7 +123,7 @@ class RoleManagementTest extends TestCase
 
     public function test_roles_list_filters_by_name(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         Role::create(['name' => 'editor', 'guard_name' => 'web']);
         $this->loginAs($admin);
 
@@ -135,27 +135,27 @@ class RoleManagementTest extends TestCase
 
     public function test_super_admin_role_is_hidden_from_non_super_admins(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $this->loginAs($admin);
 
         $names = collect($this->getJson('/api/roles')->assertOk()->json('data'))->pluck('name');
-        $this->assertFalse($names->contains('super-admin'));
-        $this->assertTrue($names->contains('admin'));
+        $this->assertFalse($names->contains('Super Admin'));
+        $this->assertTrue($names->contains('Admin'));
     }
 
     public function test_a_super_admin_sees_the_super_admin_role(): void
     {
-        $super = User::factory()->create()->assignRole('super-admin');
+        $super = User::factory()->create()->assignRole('Super Admin');
         $this->loginAs($super);
 
         $names = collect($this->getJson('/api/roles')->assertOk()->json('data'))->pluck('name');
-        $this->assertTrue($names->contains('super-admin'));
+        $this->assertTrue($names->contains('Super Admin'));
     }
 
     public function test_a_non_super_admin_cannot_view_the_super_admin_role_by_id(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
-        $superRole = Role::findByName('super-admin', 'web');
+        $admin = User::factory()->create()->assignRole('Admin');
+        $superRole = Role::findByName('Super Admin', 'web');
         $this->loginAs($admin);
 
         $this->getJson("/api/roles/{$superRole->id}")->assertNotFound();
@@ -163,7 +163,7 @@ class RoleManagementTest extends TestCase
 
     public function test_roles_list_filters_by_permission(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         Role::create(['name' => 'settings-viewer', 'guard_name' => 'web'])->syncPermissions(['settings.view']);
         Role::create(['name' => 'empty-role', 'guard_name' => 'web']);
         $this->loginAs($admin);

@@ -37,6 +37,7 @@ export function useRoles() {
     // Role names for filter/select dropdowns — fetches a single generous page
     // (there are rarely more than a handful of roles).
     options: async () => (await api<RoleListResult>('/roles', { query: { per_page: 100 } })).data.map(role => role.name),
+    get: (id: number) => api<Role>(`/roles/${id}`),
     create: (body: RolePayload) => api<Role>('/roles', { method: 'POST', body }),
     update: (id: number, body: RolePayload) => api<Role>(`/roles/${id}`, { method: 'PUT', body }),
     remove: (id: number) => api<{ message: string }>(`/roles/${id}`, { method: 'DELETE' })

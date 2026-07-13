@@ -151,7 +151,7 @@ class User extends Authenticatable
      */
     public function isRestrictedToSuperAdmins(): bool
     {
-        return $this->isSystem() || $this->hasRole('super-admin');
+        return $this->isSystem() || $this->hasRole('Super Admin');
     }
 
     /**

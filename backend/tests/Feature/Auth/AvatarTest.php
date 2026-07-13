@@ -121,7 +121,7 @@ class AvatarTest extends TestCase
     {
         $this->seed(RolePermissionSeeder::class);
 
-        $super = User::factory()->create()->assignRole('super-admin');
+        $super = User::factory()->create()->assignRole('Super Admin');
         $this->actingAs($super)->postJson('/api/user/avatar', [
             'avatar' => UploadedFile::fake()->create('me.png', 100, 'image/png'),
         ])->assertOk();
@@ -134,7 +134,7 @@ class AvatarTest extends TestCase
             ->assertNotFound();
 
         // A super-admin can.
-        $otherSuper = User::factory()->create()->assignRole('super-admin');
+        $otherSuper = User::factory()->create()->assignRole('Super Admin');
         $this->actingAs($otherSuper)
             ->get('/api/users/'.$super->id.'/avatar')
             ->assertOk();

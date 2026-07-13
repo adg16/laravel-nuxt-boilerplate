@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { z } from 'zod'
-import type { VForm } from 'vuetify/components'
 import { PERMISSIONS } from '~/constants/permissions'
 import type { Permission, Role } from '~/types/rbac'
 
@@ -12,28 +10,17 @@ definePageMeta({
 const { t } = useI18n()
 const { notify } = useSnackbar()
 const { can } = useAuthz()
-const { actionLabel, resourceLabel, fullLabel } = usePermissionLabels()
+const { fullLabel, resourceLabel, groupPermissionNames } = usePermissionLabels()
 const rolesApi = useRoles()
 const permissionsApi = usePermissions()
 
-const SUPER_ADMIN = 'super-admin'
+const SUPER_ADMIN = 'Super Admin'
 const canManage = computed(() => can(PERMISSIONS.RolesManage))
 
 const roles = ref<Role[]>([])
 const permissions = ref<Permission[]>([])
 const total = ref(0)
 const loading = ref(false)
-
-// Group the flat permission list by the segment before the dot ("users.view"
-// → group "users") so the editor reads as sections rather than a long list.
-const permissionGroups = computed(() => {
-  const groups: Record<string, Permission[]> = {}
-  for (const permission of permissions.value) {
-    const group = permission.name.split('.')[0] ?? permission.name
-    ;(groups[group] ??= []).push(permission)
-  }
-  return Object.entries(groups).map(([name, items]) => ({ name, items }))
-})
 
 // Server-side filter panel: free-text name and a permission multiselect (roles
 // granting any of the picked permissions).
@@ -42,9 +29,30 @@ const filters = reactive({
   permissions: [] as string[]
 })
 
-const permissionOptions = computed(() =>
-  permissions.value.map(permission => ({ title: fullLabel(permission.name), value: permission.name }))
-)
+// Group the multiselect by resource with a subheader per group (Vuetify renders
+// `type: 'subheader'` items as non-selectable group headings), so the filter
+// reads the same way as the role editor's grouped permission picker. Item titles
+// stay the full "Action Resource" label so selected chips and type-ahead search
+// remain unambiguous once the subheaders scroll away.
+type PermissionOption
+  = | { type: 'subheader', title: string }
+    | { title: string, value: string }
+
+const permissionOptions = computed<PermissionOption[]>(() => {
+  const groups: Record<string, Permission[]> = {}
+  for (const permission of permissions.value) {
+    const key = permission.name.split('.')[0] ?? permission.name
+    ;(groups[key] ??= []).push(permission)
+  }
+  const options: PermissionOption[] = []
+  for (const [key, items] of Object.entries(groups).sort((a, b) => resourceLabel(a[0]).localeCompare(resourceLabel(b[0])))) {
+    options.push({ type: 'subheader', title: resourceLabel(key) })
+    for (const permission of items) {
+      options.push({ title: fullLabel(permission.name), value: permission.name })
+    }
+  }
+  return options
+})
 
 const hasActiveFilters = computed(() =>
   !!filters.name || filters.permissions.length > 0
@@ -124,7 +132,7 @@ watch(filters, () => {
   }, 300)
 }, { deep: true })
 
-// Permissions power both the filter dropdown and the create/edit dialog.
+// Permissions power the filter dropdown.
 async function loadPermissions() {
   try {
     permissions.value = await permissionsApi.list()
@@ -134,53 +142,6 @@ async function loadPermissions() {
 }
 
 onMounted(loadPermissions)
-
-// --- Create / edit dialog ---
-const dialog = ref(false)
-const formRef = ref<VForm>()
-const editing = ref<Role | null>(null)
-// The dialog's name field renders server (422) errors inline via :error-messages;
-// hasFieldErrors gates the redundant bottom summary alert.
-const { loading: saving, error, fieldErrors, hasFieldErrors, clearFieldError, submit } = useSubmit()
-const state = reactive({ name: '', permissions: [] as string[] })
-
-const nameRules = [zodRule(z.string().min(1, t('validation.required')))]
-
-function openCreate() {
-  editing.value = null
-  state.name = ''
-  state.permissions = []
-  error.value = ''
-  clearFieldError()
-  dialog.value = true
-}
-
-function openEdit(role: Role) {
-  editing.value = role
-  state.name = role.name
-  state.permissions = [...role.permissions]
-  error.value = ''
-  clearFieldError()
-  dialog.value = true
-}
-
-async function onSubmit() {
-  const { valid } = await formRef.value!.validate()
-  if (!valid) return
-
-  await submit(async () => {
-    const payload = { name: state.name, permissions: state.permissions }
-    if (editing.value) {
-      await rolesApi.update(editing.value.id, payload)
-      notify(t('roles.updated'))
-    } else {
-      await rolesApi.create(payload)
-      notify(t('roles.created'))
-    }
-    dialog.value = false
-    await load()
-  })
-}
 
 // --- Delete ---
 const deleteDialog = ref(false)
@@ -215,7 +176,7 @@ async function onDelete() {
         <v-btn
           color="primary"
           prepend-icon="mdi-plus"
-          @click="openCreate"
+          to="/roles/new"
         >
           {{ $t('roles.new') }}
         </v-btn>
@@ -280,16 +241,27 @@ async function onDelete() {
           >—</span>
           <div
             v-else
-            class="d-flex flex-wrap ga-1"
+            class="perm-groups py-1"
           >
-            <v-chip
-              v-for="permission in item.permissions"
-              :key="permission"
-              size="x-small"
-              variant="outlined"
+            <div
+              v-for="group in groupPermissionNames(item.permissions)"
+              :key="group.key"
+              class="perm-group d-flex align-center ga-2"
             >
-              {{ fullLabel(permission) }}
-            </v-chip>
+              <span class="perm-group__label text-body-small font-weight-medium text-medium-emphasis">
+                {{ group.label }}
+              </span>
+              <div class="d-flex flex-wrap align-center ga-1">
+                <v-chip
+                  v-for="permission in group.items"
+                  :key="permission"
+                  size="x-small"
+                  variant="tonal"
+                >
+                  {{ fullLabel(permission) }}
+                </v-chip>
+              </div>
+            </div>
           </div>
         </template>
 
@@ -306,7 +278,7 @@ async function onDelete() {
               icon="mdi-pencil-outline"
               :tooltip="item.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.edit')"
               :disabled="item.name === SUPER_ADMIN"
-              @click="openEdit(item)"
+              @click="navigateTo(`/roles/${item.id}`)"
             />
             <AppTableAction
               icon="mdi-delete-outline"
@@ -319,63 +291,6 @@ async function onDelete() {
       </v-data-table-server>
     </v-card>
 
-    <!-- Create / edit dialog -->
-    <AppFormDialog
-      v-model="dialog"
-      :title="editing ? $t('roles.edit') : $t('roles.new')"
-      icon="mdi-shield-account-outline"
-      :max-width="640"
-      :saving="saving"
-      @submit="onSubmit"
-    >
-      <v-form
-        ref="formRef"
-        validate-on="submit"
-        @submit.prevent="onSubmit"
-      >
-        <v-text-field
-          v-model="state.name"
-          :label="$t('fields.roleName')"
-          :rules="nameRules"
-          :error-messages="fieldErrors.name"
-          @update:model-value="clearFieldError('name')"
-        />
-
-        <div class="text-title-small mt-4 mb-2">
-          {{ $t('roles.permissions') }}
-        </div>
-        <div
-          v-for="group in permissionGroups"
-          :key="group.name"
-          class="mb-3"
-        >
-          <div class="text-label-large text-medium-emphasis mb-1">
-            {{ resourceLabel(group.name) }}
-          </div>
-          <div class="d-flex flex-wrap ga-2">
-            <v-checkbox
-              v-for="permission in group.items"
-              :key="permission.id"
-              v-model="state.permissions"
-              :value="permission.name"
-              :label="actionLabel(permission.name)"
-              density="compact"
-              hide-details
-            />
-          </div>
-        </div>
-
-        <v-alert
-          v-if="error && !hasFieldErrors"
-          type="error"
-          variant="tonal"
-          density="comfortable"
-          class="mt-2"
-          :text="error"
-        />
-      </v-form>
-    </AppFormDialog>
-
     <AppConfirmDialog
       v-model="deleteDialog"
       type="error"
@@ -387,3 +302,18 @@ async function onDelete() {
     />
   </div>
 </template>
+
+<style scoped>
+/* One resource per row: a fixed-width label column keeps every group's action
+   chips aligned in a second column, so the cell reads as a small table. */
+.perm-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.perm-group__label {
+  flex: 0 0 auto;
+  min-width: 5rem;
+}
+</style>

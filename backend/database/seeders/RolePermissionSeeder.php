@@ -25,15 +25,15 @@ class RolePermissionSeeder extends Seeder
 
         // The bypass role: holds no explicit permissions — Gate::before grants
         // it everything (see AppServiceProvider).
-        Role::findOrCreate('super-admin');
+        Role::findOrCreate('Super Admin');
 
         // An ordinary, fully-editable role, pre-loaded with the management
         // permissions as a convenient starting point.
-        Role::findOrCreate('admin')
+        Role::findOrCreate('Admin')
             ->syncPermissions(Permission::all());
 
         // An example limited role: read-only access to the management screens.
-        Role::findOrCreate('viewer')
+        Role::findOrCreate('Viewer')
             ->syncPermissions(array_filter(
                 PermissionEnum::values(),
                 fn (string $name) => Str::endsWith($name, '.view')

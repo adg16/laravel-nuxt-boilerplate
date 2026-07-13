@@ -24,7 +24,7 @@ class UserCreationModeTest extends TestCase
 
     private function actAsAdmin(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $this->postJson('/api/login', ['email' => $admin->email, 'password' => 'password'])->assertOk();
     }
 

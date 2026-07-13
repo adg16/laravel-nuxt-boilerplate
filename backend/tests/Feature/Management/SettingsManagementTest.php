@@ -28,7 +28,7 @@ class SettingsManagementTest extends TestCase
 
     public function test_user_with_settings_view_can_list_settings_with_metadata(): void
     {
-        $viewer = User::factory()->create()->assignRole('viewer');
+        $viewer = User::factory()->create()->assignRole('Viewer');
         $this->loginAs($viewer);
 
         $this->getJson('/api/settings')
@@ -49,7 +49,7 @@ class SettingsManagementTest extends TestCase
 
     public function test_user_without_settings_manage_cannot_update(): void
     {
-        $viewer = User::factory()->create()->assignRole('viewer'); // has view, not manage
+        $viewer = User::factory()->create()->assignRole('Viewer'); // has view, not manage
         $this->loginAs($viewer);
 
         $this->putJson('/api/settings/user_creation_mode', ['value' => 'invite'])
@@ -60,7 +60,7 @@ class SettingsManagementTest extends TestCase
 
     public function test_admin_can_update_a_setting_value(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $this->loginAs($admin);
 
         $this->putJson('/api/settings/user_creation_mode', ['value' => 'set_password'])
@@ -74,7 +74,7 @@ class SettingsManagementTest extends TestCase
 
     public function test_an_invalid_value_is_rejected(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $this->loginAs($admin);
 
         $this->putJson('/api/settings/user_creation_mode', ['value' => 'nonsense'])
@@ -86,7 +86,7 @@ class SettingsManagementTest extends TestCase
 
     public function test_an_unknown_setting_key_is_not_found(): void
     {
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $this->loginAs($admin);
 
         $this->putJson('/api/settings/made_up_key', ['value' => 'whatever'])

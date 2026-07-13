@@ -29,7 +29,8 @@ class UserController extends Controller
             'name' => ['string', 'max:255'],
             'email' => ['string', 'max:255'],
             'roles' => ['string', 'max:255'],
-            'status' => ['string', 'max:255'],
+            'account_status' => ['string', 'max:255'],
+            'verification_status' => ['string', 'max:255'],
         ]);
 
         // Eager-load what UserResource reads (roles + the permissions each role
@@ -39,9 +40,9 @@ class UserController extends Controller
         // Protected accounts — the super-admin and the System service user — are
         // only visible to a super-admin. Everyone else, even with users.view,
         // sees ordinary users only.
-        if (! $request->user()->hasRole('super-admin')) {
+        if (! $request->user()->hasRole('Super Admin')) {
             $query->where('email', '!=', config('app.system_user_email'))
-                ->whereDoesntHave('roles', fn (Builder $q) => $q->where('name', 'super-admin'));
+                ->whereDoesntHave('roles', fn (Builder $q) => $q->where('name', 'Super Admin'));
         }
 
         // Filters (all optional). Text fields are substring matches with LIKE
@@ -58,16 +59,28 @@ class UserController extends Controller
         if ($roles) {
             $query->whereHas('roles', fn (Builder $q) => $q->whereIn('name', $roles));
         }
-        // `status` is a comma-separated set — match users satisfying ANY of the
-        // selected states (OR), grouped so it doesn't bleed into the other AND
-        // filters above.
-        $statuses = array_filter(array_map('trim', explode(',', $validated['status'] ?? '')));
-        if ($statuses) {
-            $query->where(function (Builder $q) use ($statuses) {
-                foreach ($statuses as $status) {
+        // Account and verification status are independent axes, each a
+        // comma-separated set matched with ANY (OR) within the field, grouped so
+        // it doesn't bleed into the surrounding AND filters. The two groups AND
+        // with each other, so e.g. account=inactive + verification=unverified
+        // narrows to users failing both checks.
+        $accountStatuses = array_filter(array_map('trim', explode(',', $validated['account_status'] ?? '')));
+        if ($accountStatuses) {
+            $query->where(function (Builder $q) use ($accountStatuses) {
+                foreach ($accountStatuses as $status) {
                     match ($status) {
                         'active' => $q->orWhereNull('deactivated_at'),
                         'inactive' => $q->orWhereNotNull('deactivated_at'),
+                        default => null,
+                    };
+                }
+            });
+        }
+        $verificationStatuses = array_filter(array_map('trim', explode(',', $validated['verification_status'] ?? '')));
+        if ($verificationStatuses) {
+            $query->where(function (Builder $q) use ($verificationStatuses) {
+                foreach ($verificationStatuses as $status) {
+                    match ($status) {
                         'verified' => $q->orWhereNotNull('email_verified_at'),
                         'unverified' => $q->orWhereNull('email_verified_at'),
                         default => null,
@@ -127,7 +140,7 @@ class UserController extends Controller
         // Super-admin accounts (the System user and anyone with the role) are
         // invisible to non-super-admins even by guessing an id — 404, matching
         // the list filter, so we don't confirm the account exists.
-        if ($user->isRestrictedToSuperAdmins() && ! $request->user()->hasRole('super-admin')) {
+        if ($user->isRestrictedToSuperAdmins() && ! $request->user()->hasRole('Super Admin')) {
             abort(404);
         }
 
@@ -256,7 +269,7 @@ class UserController extends Controller
      */
     private function guardSuperAdminManagement(Request $request, User $user): void
     {
-        if ($user->hasRole('super-admin') && ! $request->user()->hasRole('super-admin')) {
+        if ($user->hasRole('Super Admin') && ! $request->user()->hasRole('Super Admin')) {
             throw ValidationException::withMessages([
                 'user' => [__('management.cannot_manage_super_admin')],
             ]);
@@ -272,7 +285,7 @@ class UserController extends Controller
      */
     private function guardSuperAdminAssignment(Request $request, array $roles): void
     {
-        if (in_array('super-admin', $roles, true) && ! $request->user()->hasRole('super-admin')) {
+        if (in_array('Super Admin', $roles, true) && ! $request->user()->hasRole('Super Admin')) {
             throw ValidationException::withMessages([
                 'roles' => [__('management.cannot_assign_super_admin')],
             ]);

@@ -37,7 +37,7 @@ describe('Can', () => {
     canMock.mockReturnValue(true)
     hasRoleMock.mockReturnValue(false)
     const wrapper = await mountSuspended(Can, {
-      props: { permission: 'users.manage', role: 'admin' },
+      props: { permission: 'users.manage', role: 'Admin' },
       slots: { default: () => 'SECRET' }
     })
 

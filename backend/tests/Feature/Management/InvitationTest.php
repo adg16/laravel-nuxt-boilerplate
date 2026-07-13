@@ -110,7 +110,7 @@ class InvitationTest extends TestCase
     {
         Notification::fake();
         $this->seed(RolePermissionSeeder::class);
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $pending = User::factory()->unverified()->create();
         $this->postJson('/api/login', ['email' => $admin->email, 'password' => 'password'])->assertOk();
 
@@ -122,7 +122,7 @@ class InvitationTest extends TestCase
     public function test_resend_is_blocked_once_the_invitation_is_accepted(): void
     {
         $this->seed(RolePermissionSeeder::class);
-        $admin = User::factory()->create()->assignRole('admin');
+        $admin = User::factory()->create()->assignRole('Admin');
         $verified = User::factory()->create(); // factory users are verified
         $this->postJson('/api/login', ['email' => $admin->email, 'password' => 'password'])->assertOk();
 
