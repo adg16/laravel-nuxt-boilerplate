@@ -31,7 +31,7 @@ class RoleController extends Controller
         // `auth:sanctum` is `sanctum` (provider null) — so `withCount('users')`
         // blows up. The pivot subquery avoids guard resolution altogether.
         $query = Role::query()
-            ->with('permissions', 'creator.roles', 'updater.roles')
+            ->with('permissions', 'creator', 'updater')
             ->select('roles.*')
             ->addSelect(['users_count' => DB::table($this->pivotTable())
                 ->selectRaw('count(*)')
@@ -78,7 +78,7 @@ class RoleController extends Controller
         ]);
         $role->syncPermissions($request->input('permissions', []));
 
-        return RoleResource::make($role->load('permissions', 'creator.roles', 'updater.roles'))->response()->setStatusCode(201);
+        return RoleResource::make($role->load('permissions', 'creator', 'updater'))->response()->setStatusCode(201);
     }
 
     public function show(Request $request, Role $role): RoleResource
@@ -89,7 +89,7 @@ class RoleController extends Controller
             abort(404);
         }
 
-        $role->load('permissions', 'creator.roles', 'updater.roles');
+        $role->load('permissions', 'creator', 'updater');
         $role->users_count = DB::table($this->pivotTable())
             ->where($this->rolePivotKey(), $role->id)
             ->count();
@@ -110,7 +110,7 @@ class RoleController extends Controller
         // stamps `updated_by`, see App\Models\Concerns\Blameable).
         $role->touch();
 
-        return RoleResource::make($role->load('permissions', 'creator.roles', 'updater.roles'));
+        return RoleResource::make($role->load('permissions', 'creator', 'updater'));
     }
 
     public function destroy(Role $role): JsonResponse

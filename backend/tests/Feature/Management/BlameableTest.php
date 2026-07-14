@@ -100,11 +100,11 @@ class BlameableTest extends TestCase
             ->assertJsonPath('updated_by.id', $admin->id);
     }
 
-    public function test_super_admin_blame_stamps_are_redacted_from_non_super_admins(): void
+    public function test_super_admin_blame_stamps_are_shown_to_non_super_admins(): void
     {
-        // Jane was created by a super-admin, whose identity must not leak to a
-        // plain admin viewing the account.
-        $superAdmin = User::factory()->create()->assignRole('Super Admin');
+        // Jane was created by a super-admin; the blame stamp is shown as-is even
+        // to a plain admin (blame stamps are not redacted).
+        $superAdmin = User::factory()->create(['name' => 'Sam Super'])->assignRole('Super Admin');
         $jane = User::factory()->create();
         $jane->forceFill(['created_by' => $superAdmin->id])->save();
 
@@ -113,21 +113,8 @@ class BlameableTest extends TestCase
 
         $this->getJson("/api/users/{$jane->id}")
             ->assertOk()
-            ->assertJsonPath('created_by', null);
-    }
-
-    public function test_super_admin_sees_the_real_blame_stamp(): void
-    {
-        $superAdmin = User::factory()->create()->assignRole('Super Admin');
-        $jane = User::factory()->create();
-        $jane->forceFill(['created_by' => $superAdmin->id])->save();
-
-        $viewer = User::factory()->create()->assignRole('Super Admin');
-        $this->loginAs($viewer);
-
-        $this->getJson("/api/users/{$jane->id}")
-            ->assertOk()
-            ->assertJsonPath('created_by.id', $superAdmin->id);
+            ->assertJsonPath('created_by.id', $superAdmin->id)
+            ->assertJsonPath('created_by.name', 'Sam Super');
     }
 
     public function test_roles_list_exposes_blame_stamps_and_accepts_timestamp_sort(): void
@@ -146,7 +133,7 @@ class BlameableTest extends TestCase
             ->assertJsonPath('data.0.updated_by.id', $admin->id);
     }
 
-    public function test_users_list_redacts_super_admin_blame_stamps_from_non_super_admins(): void
+    public function test_users_list_shows_super_admin_blame_stamps_to_non_super_admins(): void
     {
         $superAdmin = User::factory()->create()->assignRole('Super Admin');
         $jane = User::factory()->create(['name' => 'Jane']);
@@ -155,13 +142,12 @@ class BlameableTest extends TestCase
         $admin = User::factory()->create()->assignRole('Admin');
         $this->loginAs($admin);
 
-        // A plain admin sees Jane (an ordinary user) but not the super-admin who
-        // created her — the stamp is redacted in the list just like on `show`.
-        // Also exercises the widened sort_by whitelist.
+        // A plain admin sees Jane (an ordinary user) and her super-admin creator's
+        // blame stamp (not redacted). Also exercises the widened sort_by whitelist.
         $this->getJson('/api/users?name=Jane&sort_by=updated_at&sort_dir=desc')
             ->assertOk()
             ->assertJsonPath('data.0.name', 'Jane')
-            ->assertJsonPath('data.0.created_by', null);
+            ->assertJsonPath('data.0.created_by.id', $superAdmin->id);
     }
 
     public function test_records_written_without_an_authenticated_user_are_not_stamped(): void

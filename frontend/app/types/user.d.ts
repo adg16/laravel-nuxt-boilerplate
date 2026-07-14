@@ -30,8 +30,8 @@ export interface User {
   two_factor_method: 'totp' | 'email' | null
   created_at: string
   updated_at: string
-  // Who created / last updated the account, or null when there's no actor or the
-  // actor is redacted (a restricted account hidden from the viewer).
+  // Who created / last updated the account, or null when there's no actor
+  // (seeded / automated writes).
   created_by: BlameStamp | null
   updated_by: BlameStamp | null
 }

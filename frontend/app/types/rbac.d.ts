@@ -3,8 +3,7 @@
 // backend's JsonResource::withoutWrapping().
 
 // Who created / last updated a record, or null when there's no actor (seeded /
-// automated writes) or the actor is redacted (a super-admin / System account
-// hidden from a non-super-admin viewer). See the backend's HasBlameStamps.
+// automated writes). See the backend's HasBlameStamps.
 export interface BlameStamp {
   id: number
   name: string

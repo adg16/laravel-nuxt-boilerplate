@@ -26,11 +26,10 @@ class RoleResource extends JsonResource
             'users_count' => $this->whenCounted('users'),
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            // Who created / last updated the role, as { id, name } or null.
-            // Restricted (super-admin / System) actors are redacted to null for
-            // non-super-admin viewers — see HasBlameStamps.
-            'created_by' => $this->blameStamp($this->creator, $request),
-            'updated_by' => $this->blameStamp($this->updater, $request),
+            // Who created / last updated the role, as { id, name } or null
+            // (null when there's no actor — seeded / automated writes).
+            'created_by' => $this->blameStamp($this->creator),
+            'updated_by' => $this->blameStamp($this->updater),
         ];
     }
 }

@@ -34,10 +34,9 @@ class UserController extends Controller
         ]);
 
         // Eager-load what UserResource reads (roles + the permissions each role
-        // grants) so getAllPermissions() doesn't lazy-load per row (N+1). The
-        // blame stamps' roles are loaded too so redacting super-admin actors
-        // (HasBlameStamps) doesn't query per row either.
-        $query = User::with('roles.permissions', 'permissions', 'creator.roles', 'updater.roles');
+        // grants) so getAllPermissions() doesn't lazy-load per row (N+1); the
+        // creator/updater blame relations are eager-loaded for the same reason.
+        $query = User::with('roles.permissions', 'permissions', 'creator', 'updater');
 
         // Protected accounts — the super-admin and the System service user — are
         // only visible to a super-admin. Everyone else, even with users.view,
@@ -146,7 +145,7 @@ class UserController extends Controller
             abort(404);
         }
 
-        return UserResource::make($user->load('roles', 'creator.roles', 'updater.roles'));
+        return UserResource::make($user->load('roles', 'creator', 'updater'));
     }
 
     public function update(UpdateUserRequest $request, User $user): UserResource
@@ -164,7 +163,7 @@ class UserController extends Controller
 
         $user->syncRoles($roles);
 
-        return UserResource::make($user->load('roles', 'creator.roles', 'updater.roles'));
+        return UserResource::make($user->load('roles', 'creator', 'updater'));
     }
 
     public function destroy(Request $request, User $user): JsonResponse
