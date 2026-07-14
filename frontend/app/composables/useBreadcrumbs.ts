@@ -25,5 +25,9 @@ export function useBreadcrumbs() {
 
   const current = computed(() => crumbs.value.at(-1)?.title ?? '')
 
-  return { crumbs, current }
+  // The crumb one level up — the "back" target for nested pages (undefined on
+  // top-level pages, which have a single crumb). Parent crumbs carry a `to`.
+  const parent = computed(() => crumbs.value.at(-2))
+
+  return { crumbs, current, parent }
 }

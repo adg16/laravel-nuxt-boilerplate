@@ -11,6 +11,9 @@ const router = useRouter()
 const visibleNavItems = computed(() =>
   navItems.filter(item => !item.permission || can(item.permission))
 )
+// The "back" target for nested pages (the breadcrumb parent) — undefined on
+// top-level pages, so the back button only shows where there's a level to go up.
+const { parent } = useBreadcrumbs()
 const theme = useTheme()
 const display = useDisplay()
 const { appName, appTagline } = useRuntimeConfig().public
@@ -272,10 +275,28 @@ async function handleLogout() {
           <div class="d-flex flex-wrap align-center ga-4">
             <AppPageTitle />
             <v-spacer />
-            <div
-              id="page-actions"
-              class="d-flex align-center ga-2"
-            />
+            <!-- Action cluster, right-aligned and flush with the content's right
+                 edge (aligned with the cards below). The back button leads (the
+                 conventional leftmost, least-prominent action) and #page-actions
+                 (a page's teleported "New …" buttons) trails it. Grouping them in
+                 one flex row means an empty #page-actions adds no trailing gap, so
+                 the last visible control stays flush right. -->
+            <div class="d-flex align-center ga-2">
+              <!-- Back button for nested pages: navigates up to the breadcrumb
+                   parent. Hidden on top-level pages. -->
+              <v-btn
+                v-if="parent?.to"
+                prepend-icon="mdi-arrow-left"
+                variant="tonal"
+                @click="navigateTo(parent.to)"
+              >
+                {{ $t('common.back') }}
+              </v-btn>
+              <div
+                id="page-actions"
+                class="page-actions d-flex align-center ga-2"
+              />
+            </div>
           </div>
           <AppBreadcrumbTrail class="mt-1" />
         </div>
@@ -284,3 +305,12 @@ async function handleLogout() {
     </v-main>
   </div>
 </template>
+
+<style scoped>
+/* When a page teleports no actions into #page-actions, collapse it so the flex
+   gap before it doesn't offset the leading control (the back button) from the
+   content's right edge. A page's teleported buttons make it non-empty again. */
+.page-actions:empty {
+  display: none;
+}
+</style>

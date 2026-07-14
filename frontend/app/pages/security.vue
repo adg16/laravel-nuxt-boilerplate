@@ -363,7 +363,7 @@ async function regenerate() {
                 {{ $t('security.email.resend') }}
               </v-btn>
               <v-btn
-                variant="text"
+                variant="tonal"
                 :disabled="confirming || busy"
                 @click="cancelEnroll"
               >

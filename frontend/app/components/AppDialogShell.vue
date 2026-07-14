@@ -52,7 +52,7 @@ defineEmits<{ action: [] }>()
       <v-card-actions class="app-dialog-shell__actions px-6 pt-4 pb-6 mt-4">
         <v-spacer />
         <v-btn
-          variant="text"
+          variant="tonal"
           :disabled="loading"
           @click="open = false"
         >

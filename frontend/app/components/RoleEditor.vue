@@ -119,7 +119,7 @@ async function onSubmit() {
       <v-card-actions class="px-6 py-4">
         <v-spacer />
         <v-btn
-          variant="text"
+          variant="tonal"
           :disabled="saving"
           @click="cancel"
         >

@@ -6,6 +6,7 @@
     "tooManyRequests": "Too many attempts. Please try again later.",
     "tooManyRequestsRetry": "Too many attempts. Please try again in {seconds} seconds.",
     "cancel": "Cancel",
+    "back": "Back",
     "confirm": "Confirm",
     "save": "Save",
     "edit": "Edit",
