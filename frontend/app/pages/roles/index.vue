@@ -7,7 +7,7 @@ definePageMeta({
   permission: PERMISSIONS.RolesView
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { notify } = useSnackbar()
 const { can } = useAuthz()
 const { fullLabel, resourceLabel, groupPermissionNames } = usePermissionLabels()
@@ -63,11 +63,20 @@ function clearFilters() {
   filters.permissions = []
 }
 
-// Name and user count are server-sortable; the permission list is a composed value.
+// Localized medium-date + short-time for the timestamp columns.
+const fmtDate = (value?: string | null) => formatDateTime(value, locale.value)
+
+// Name, user count and the timestamps are server-sortable; the permission list
+// is a composed value and the blame stamps are nested objects, so both are
+// display-only.
 const headers = computed(() => [
   { title: t('table.role'), key: 'name' },
   { title: t('table.permissions'), key: 'permissions', sortable: false },
   { title: t('table.users'), key: 'users_count' },
+  { title: t('table.createdBy'), key: 'created_by', sortable: false },
+  { title: t('table.updatedBy'), key: 'updated_by', sortable: false },
+  { title: t('table.createdAt'), key: 'created_at' },
+  { title: t('table.updatedAt'), key: 'updated_at' },
   ...(canManage.value
     ? [{ title: t('table.actions'), key: 'actions', sortable: false, align: 'end' as const }]
     : [])
@@ -267,6 +276,26 @@ async function onDelete() {
 
         <template #[`item.users_count`]="{ item }">
           {{ item.users_count ?? 0 }}
+        </template>
+
+        <template #[`item.created_by`]="{ item }">
+          <span :class="{ 'text-medium-emphasis': !item.created_by }">
+            {{ item.created_by?.name ?? '—' }}
+          </span>
+        </template>
+
+        <template #[`item.updated_by`]="{ item }">
+          <span :class="{ 'text-medium-emphasis': !item.updated_by }">
+            {{ item.updated_by?.name ?? '—' }}
+          </span>
+        </template>
+
+        <template #[`item.created_at`]="{ item }">
+          <span class="text-no-wrap">{{ fmtDate(item.created_at) }}</span>
+        </template>
+
+        <template #[`item.updated_at`]="{ item }">
+          <span class="text-no-wrap">{{ fmtDate(item.updated_at) }}</span>
         </template>
 
         <template

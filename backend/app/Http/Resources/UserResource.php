@@ -2,11 +2,14 @@
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Concerns\HasBlameStamps;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
 class UserResource extends JsonResource
 {
+    use HasBlameStamps;
+
     /**
      * @return array<string, mixed>
      */
@@ -39,6 +42,12 @@ class UserResource extends JsonResource
             // Which second factor is enrolled ('totp' | 'email'), or null.
             'two_factor_method' => $this->twoFactorMethod()?->value,
             'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            // Who created / last updated the account, as { id, name } or null.
+            // Restricted (super-admin / System) actors are redacted to null for
+            // non-super-admin viewers — see HasBlameStamps.
+            'created_by' => $this->blameStamp($this->creator, $request),
+            'updated_by' => $this->blameStamp($this->updater, $request),
         ];
     }
 }

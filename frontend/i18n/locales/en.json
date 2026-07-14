@@ -65,6 +65,10 @@
     "description": "Description",
     "users": "Users",
     "permissions": "Permissions",
+    "createdBy": "Created By",
+    "updatedBy": "Updated By",
+    "createdAt": "Created",
+    "updatedAt": "Updated",
     "actions": "Actions"
   },
   "status": {

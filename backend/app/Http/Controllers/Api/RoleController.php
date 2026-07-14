@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Role\StoreRoleRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
+use App\Models\Role;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Spatie\Permission\Models\Role;
 
 class RoleController extends Controller
 {
@@ -20,7 +20,7 @@ class RoleController extends Controller
         $validated = $request->validate([
             'page' => ['integer', 'min:1'],
             'per_page' => ['integer', 'min:1', 'max:100'],
-            'sort_by' => ['string', 'in:name,users_count'],
+            'sort_by' => ['string', 'in:name,users_count,created_at,updated_at'],
             'sort_dir' => ['string', 'in:asc,desc'],
             'name' => ['string', 'max:255'],
             'permissions' => ['string', 'max:1000'],
@@ -31,7 +31,7 @@ class RoleController extends Controller
         // `auth:sanctum` is `sanctum` (provider null) — so `withCount('users')`
         // blows up. The pivot subquery avoids guard resolution altogether.
         $query = Role::query()
-            ->with('permissions')
+            ->with('permissions', 'creator.roles', 'updater.roles')
             ->select('roles.*')
             ->addSelect(['users_count' => DB::table($this->pivotTable())
                 ->selectRaw('count(*)')
@@ -78,7 +78,7 @@ class RoleController extends Controller
         ]);
         $role->syncPermissions($request->input('permissions', []));
 
-        return RoleResource::make($role->load('permissions'))->response()->setStatusCode(201);
+        return RoleResource::make($role->load('permissions', 'creator.roles', 'updater.roles'))->response()->setStatusCode(201);
     }
 
     public function show(Request $request, Role $role): RoleResource
@@ -89,7 +89,7 @@ class RoleController extends Controller
             abort(404);
         }
 
-        $role->load('permissions');
+        $role->load('permissions', 'creator.roles', 'updater.roles');
         $role->users_count = DB::table($this->pivotTable())
             ->where($this->rolePivotKey(), $role->id)
             ->count();
@@ -101,10 +101,16 @@ class RoleController extends Controller
     {
         $this->guardSuperAdmin($role);
 
-        $role->update(['name' => $request->string('name')]);
+        $role->name = $request->string('name');
         $role->syncPermissions($request->input('permissions', []));
+        // A single write: touch() persists the (possibly changed) name and bumps
+        // updated_at in one UPDATE, and — since permissions live in a pivot that
+        // wouldn't dirty the role row — guarantees `updated_by`/`updated_at`
+        // reflect the editor even on a permission-only edit (the `updating` hook
+        // stamps `updated_by`, see App\Models\Concerns\Blameable).
+        $role->touch();
 
-        return RoleResource::make($role->load('permissions'));
+        return RoleResource::make($role->load('permissions', 'creator.roles', 'updater.roles'));
     }
 
     public function destroy(Role $role): JsonResponse

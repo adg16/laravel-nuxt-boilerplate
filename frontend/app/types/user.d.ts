@@ -1,3 +1,5 @@
+import type { BlameStamp } from './rbac'
+
 // The second factor a user has enrolled.
 export type TwoFactorMethod = 'totp' | 'email'
 
@@ -27,4 +29,9 @@ export interface User {
   // Which second factor is enrolled, or null.
   two_factor_method: 'totp' | 'email' | null
   created_at: string
+  updated_at: string
+  // Who created / last updated the account, or null when there's no actor or the
+  // actor is redacted (a restricted account hidden from the viewer).
+  created_by: BlameStamp | null
+  updated_by: BlameStamp | null
 }

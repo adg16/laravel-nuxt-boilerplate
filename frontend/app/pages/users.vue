@@ -9,7 +9,7 @@ definePageMeta({
   permission: PERMISSIONS.UsersView
 })
 
-const { t } = useI18n()
+const { t, locale } = useI18n()
 const { notify } = useSnackbar()
 const { can } = useAuthz()
 const auth = useAuthStore()
@@ -90,14 +90,22 @@ function clearFilters() {
   filters.verificationStatus = []
 }
 
-// Only name/email are server-sortable (the backend whitelists those columns);
-// roles/status are composed values. The actions column is manage-only.
+// Localized medium-date + short-time for the timestamp columns.
+const fmtDate = (value?: string | null) => formatDateTime(value, locale.value)
+
+// Name/email and the timestamps are server-sortable (the backend whitelists
+// those columns); roles/status are composed values and the blame stamps are
+// nested objects, so both are display-only. The actions column is manage-only.
 const headers = computed(() => [
   { title: t('table.name'), key: 'name' },
   { title: t('table.email'), key: 'email' },
   { title: t('table.roles'), key: 'roles', sortable: false },
   { title: t('table.account'), key: 'account', sortable: false },
   { title: t('table.verification'), key: 'verification', sortable: false },
+  { title: t('table.createdBy'), key: 'created_by', sortable: false },
+  { title: t('table.updatedBy'), key: 'updated_by', sortable: false },
+  { title: t('table.createdAt'), key: 'created_at' },
+  { title: t('table.updatedAt'), key: 'updated_at' },
   ...(canManage.value
     ? [{ title: t('table.actions'), key: 'actions', sortable: false, align: 'end' as const }]
     : [])
@@ -499,6 +507,26 @@ async function onDeactivate() {
           >
             {{ item.is_verified ? $t('users.verified') : $t('users.pending') }}
           </v-chip>
+        </template>
+
+        <template #[`item.created_by`]="{ item }">
+          <span :class="{ 'text-medium-emphasis': !item.created_by }">
+            {{ item.created_by?.name ?? '—' }}
+          </span>
+        </template>
+
+        <template #[`item.updated_by`]="{ item }">
+          <span :class="{ 'text-medium-emphasis': !item.updated_by }">
+            {{ item.updated_by?.name ?? '—' }}
+          </span>
+        </template>
+
+        <template #[`item.created_at`]="{ item }">
+          <span class="text-no-wrap">{{ fmtDate(item.created_at) }}</span>
+        </template>
+
+        <template #[`item.updated_at`]="{ item }">
+          <span class="text-no-wrap">{{ fmtDate(item.updated_at) }}</span>
         </template>
 
         <template
