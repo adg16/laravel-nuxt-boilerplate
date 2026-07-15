@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PERMISSIONS } from '~/constants/permissions'
+import { SUPER_ADMIN_ROLE } from '~/constants/roles'
 import type { Permission, Role } from '~/types/rbac'
 
 definePageMeta({
@@ -14,7 +15,6 @@ const { fullLabel, resourceLabel, groupPermissionNames } = usePermissionLabels()
 const rolesApi = useRoles()
 const permissionsApi = usePermissions()
 
-const SUPER_ADMIN = 'Super Admin'
 const canManage = computed(() => can(PERMISSIONS.RolesManage))
 const canViewActivity = computed(() => can(PERMISSIONS.ActivityView))
 
@@ -234,7 +234,7 @@ async function onDelete() {
           <v-chip
             size="small"
             variant="tonal"
-            :color="item.name === SUPER_ADMIN ? 'primary' : undefined"
+            :color="item.name === SUPER_ADMIN_ROLE ? 'primary' : undefined"
           >
             {{ item.name }}
           </v-chip>
@@ -242,7 +242,7 @@ async function onDelete() {
 
         <template #[`item.permissions`]="{ item }">
           <span
-            v-if="item.name === SUPER_ADMIN"
+            v-if="item.name === SUPER_ADMIN_ROLE"
             class="text-medium-emphasis"
           >{{ $t('roles.allAccess') }}</span>
           <span
@@ -307,14 +307,14 @@ async function onDelete() {
             <template v-if="canManage">
               <AppTableAction
                 icon="mdi-pencil-outline"
-                :tooltip="item.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.edit')"
-                :disabled="item.name === SUPER_ADMIN"
+                :tooltip="item.name === SUPER_ADMIN_ROLE ? $t('roles.protectedTooltip') : $t('common.edit')"
+                :disabled="item.name === SUPER_ADMIN_ROLE"
                 @click="navigateTo(`/roles/${item.id}`)"
               />
               <AppTableAction
                 icon="mdi-delete-outline"
-                :tooltip="item.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.delete')"
-                :disabled="item.name === SUPER_ADMIN"
+                :tooltip="item.name === SUPER_ADMIN_ROLE ? $t('roles.protectedTooltip') : $t('common.delete')"
+                :disabled="item.name === SUPER_ADMIN_ROLE"
                 @click="openDelete(item)"
               />
             </template>

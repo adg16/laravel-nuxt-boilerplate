@@ -4,12 +4,22 @@ import { useTheme, useDisplay } from 'vuetify'
 // `navItems` (the sidebar menu) is the single source in `app/utils/nav.ts` —
 // auto-imported here.
 const auth = useAuthStore()
-const { can } = useAuthz()
+const { can, hasRole } = useAuthz()
 const router = useRouter()
 
 // Hide nav items the user isn't permitted to see; unguarded items always show.
+// Items may be gated by a permission and/or a role (e.g. the Super-Admin-only
+// Horizon link) — both must pass when present.
 const visibleNavItems = computed(() =>
-  navItems.filter(item => !item.permission || can(item.permission))
+  navItems.filter(item =>
+    (!item.permission || can(item.permission)) && (!item.role || hasRole(item.role))
+  )
+)
+// Position of the first visible 'admin'-section item, so the render can draw a
+// divider just above it (separating admin tools from the main nav). -1 when no
+// admin item is visible, so the divider is omitted entirely.
+const adminDividerIndex = computed(() =>
+  visibleNavItems.value.findIndex(item => item.section === 'admin')
 )
 // The "back" target for nested pages (the breadcrumb parent) — undefined on
 // top-level pages, so the back button only shows where there's a level to go up.
@@ -228,15 +238,31 @@ async function handleLogout() {
         nav
         density="comfortable"
       >
-        <v-list-item
-          v-for="item in visibleNavItems"
-          :key="item.to"
-          :to="item.to"
-          :prepend-icon="item.icon"
-          :title="$t(item.titleKey)"
-          color="primary"
-          rounded="lg"
-        />
+        <!-- Internal items use a client-side `to`; external ones (e.g. Horizon,
+             a server-rendered page outside the SPA) use a real `href` opened in
+             a new tab with an indicator icon. A divider precedes the first
+             visible admin-section item, grouping the management tools. -->
+        <template
+          v-for="(item, i) in visibleNavItems"
+          :key="item.titleKey"
+        >
+          <v-divider
+            v-if="i === adminDividerIndex && i > 0"
+            class="my-2"
+          />
+          <v-list-item
+            :to="item.to"
+            :href="item.href"
+            :target="item.href ? '_blank' : undefined"
+            :rel="item.href ? 'noopener' : undefined"
+            :aria-label="item.href ? `${$t(item.titleKey)} (${$t('a11y.opensInNewTab')})` : undefined"
+            :prepend-icon="item.icon"
+            :append-icon="item.href ? 'mdi-open-in-new' : undefined"
+            :title="$t(item.titleKey)"
+            color="primary"
+            rounded="lg"
+          />
+        </template>
       </v-list>
 
       <!-- Desktop-only pin toggle, pinned to the drawer bottom: switches between

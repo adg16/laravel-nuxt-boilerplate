@@ -27,6 +27,7 @@
     "settings": "Settings",
     "security": "Security",
     "profile": "Profile",
+    "horizon": "Queue Dashboard",
     "pinMenu": "Pin Menu",
     "unpinMenu": "Unpin Menu"
   },
@@ -39,7 +40,8 @@
     "switchToLight": "Switch to light mode",
     "switchToDark": "Switch to dark mode",
     "showPassword": "Show password",
-    "hidePassword": "Hide password"
+    "hidePassword": "Hide password",
+    "opensInNewTab": "opens in new tab"
   },
   "fields": {
     "email": "Email",

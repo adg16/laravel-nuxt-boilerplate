@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { PERMISSIONS } from '~/constants/permissions'
+import { SUPER_ADMIN_ROLE } from '~/constants/roles'
 import type { Role } from '~/types/rbac'
 
 definePageMeta({
@@ -20,7 +21,7 @@ onMounted(async () => {
     const data = await rolesApi.get(Number(route.params.id))
     // The super-admin role is the Gate::before bypass — protected from edits for
     // everyone (the backend also 422s). Bounce direct navigation back to the list.
-    if (data.name === 'Super Admin') {
+    if (data.name === SUPER_ADMIN_ROLE) {
       notify(t('roles.protectedTooltip'), 'error')
       await navigateTo('/roles')
       return
