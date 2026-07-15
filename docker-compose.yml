@@ -28,7 +28,11 @@ services:
       context: .
       dockerfile: docker/php/Dockerfile
       target: prod
-    command: php artisan queue:work --tries=3 --sleep=3
+    # Laravel Horizon supervises the Redis queue workers (tries/timeout/balance
+    # live in config/horizon.php, not flags). Dashboard at /horizon.
+    command: php artisan horizon
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
     env_file: backend/.env
     depends_on:
       mariadb:
