@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Setting\UpdateSettingRequest;
 use App\Http\Resources\SettingResource;
 use App\Services\Settings;
+use App\Support\ActivityLogger;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
 class SettingController extends Controller
@@ -32,7 +33,10 @@ class SettingController extends Controller
 
         // Pass the raw (already-validated) typed value; Settings serializes it
         // per the setting's type.
+        $old = $settings->get($key);
         $settings->set($key, $request->input('value'));
+        // Audit the change with typed old/new values (no-op if unchanged).
+        ActivityLogger::logSetting($key->value, $old, $settings->get($key));
 
         return SettingResource::make($key);
     }

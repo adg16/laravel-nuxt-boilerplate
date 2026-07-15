@@ -6,7 +6,8 @@ export const PERMISSIONS = {
   RolesView: 'roles.view',
   RolesManage: 'roles.manage',
   SettingsView: 'settings.view',
-  SettingsManage: 'settings.manage'
+  SettingsManage: 'settings.manage',
+  ActivityView: 'activity.view'
 } as const
 
 export type PermissionName = (typeof PERMISSIONS)[keyof typeof PERMISSIONS]

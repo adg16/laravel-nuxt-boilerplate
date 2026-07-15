@@ -9,6 +9,7 @@ use App\Http\Requests\User\UpdateUserRequest;
 use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Services\InvitationService;
+use App\Support\ActivityLogger;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -123,6 +124,9 @@ class UserController extends Controller
         ]);
 
         $user->syncRoles($roles);
+        // The `created` activity only carries column changes; the initial role
+        // grant lives in a pivot, so log it separately (no-op when no roles).
+        ActivityLogger::logRoleAssignment($user, [], $user->getRoleNames()->all());
 
         if ($setPassword) {
             // The admin set the credentials — the user is active immediately, no
@@ -161,7 +165,9 @@ class UserController extends Controller
             'email' => $request->string('email'),
         ]);
 
+        $before = $user->getRoleNames()->all();
         $user->syncRoles($roles);
+        ActivityLogger::logRoleAssignment($user, $before, $user->getRoleNames()->all());
 
         return UserResource::make($user->load('roles', 'creator', 'updater'));
     }

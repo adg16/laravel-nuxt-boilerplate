@@ -16,6 +16,7 @@ const permissionsApi = usePermissions()
 
 const SUPER_ADMIN = 'Super Admin'
 const canManage = computed(() => can(PERMISSIONS.RolesManage))
+const canViewActivity = computed(() => can(PERMISSIONS.ActivityView))
 
 const roles = ref<Role[]>([])
 const permissions = ref<Permission[]>([])
@@ -77,7 +78,7 @@ const headers = computed(() => [
   { title: t('table.updatedBy'), key: 'updated_by', sortable: false },
   { title: t('table.createdAt'), key: 'created_at' },
   { title: t('table.updatedAt'), key: 'updated_at' },
-  ...(canManage.value
+  ...(canManage.value || canViewActivity.value
     ? [{ title: t('table.actions'), key: 'actions', sortable: false, align: 'end' as const }]
     : [])
 ])
@@ -299,21 +300,29 @@ async function onDelete() {
         </template>
 
         <template
-          v-if="canManage"
+          v-if="canManage || canViewActivity"
           #[`item.actions`]="{ item }"
         >
           <div class="text-no-wrap">
+            <template v-if="canManage">
+              <AppTableAction
+                icon="mdi-pencil-outline"
+                :tooltip="item.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.edit')"
+                :disabled="item.name === SUPER_ADMIN"
+                @click="navigateTo(`/roles/${item.id}`)"
+              />
+              <AppTableAction
+                icon="mdi-delete-outline"
+                :tooltip="item.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.delete')"
+                :disabled="item.name === SUPER_ADMIN"
+                @click="openDelete(item)"
+              />
+            </template>
             <AppTableAction
-              icon="mdi-pencil-outline"
-              :tooltip="item.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.edit')"
-              :disabled="item.name === SUPER_ADMIN"
-              @click="navigateTo(`/roles/${item.id}`)"
-            />
-            <AppTableAction
-              icon="mdi-delete-outline"
-              :tooltip="item.name === SUPER_ADMIN ? $t('roles.protectedTooltip') : $t('common.delete')"
-              :disabled="item.name === SUPER_ADMIN"
-              @click="openDelete(item)"
+              v-if="canViewActivity"
+              icon="mdi-history"
+              :tooltip="$t('activityLog.viewHistory')"
+              @click="navigateTo(`/roles/${item.id}/activity`)"
             />
           </div>
         </template>

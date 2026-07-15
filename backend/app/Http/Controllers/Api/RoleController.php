@@ -7,6 +7,7 @@ use App\Http\Requests\Role\StoreRoleRequest;
 use App\Http\Requests\Role\UpdateRoleRequest;
 use App\Http\Resources\RoleResource;
 use App\Models\Role;
+use App\Support\ActivityLogger;
 use Illuminate\Contracts\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -77,6 +78,8 @@ class RoleController extends Controller
             'guard_name' => 'web',
         ]);
         $role->syncPermissions($request->input('permissions', []));
+        // Permission grants live in a pivot the `created` activity can't see.
+        ActivityLogger::logPermissionChange($role, [], $role->getPermissionNames()->all());
 
         return RoleResource::make($role->load('permissions', 'creator', 'updater'))->response()->setStatusCode(201);
     }
@@ -102,7 +105,9 @@ class RoleController extends Controller
         $this->guardSuperAdmin($role);
 
         $role->name = $request->string('name');
+        $before = $role->getPermissionNames()->all();
         $role->syncPermissions($request->input('permissions', []));
+        ActivityLogger::logPermissionChange($role, $before, $role->getPermissionNames()->all());
         // A single write: touch() persists the (possibly changed) name and bumps
         // updated_at in one UPDATE, and — since permissions live in a pivot that
         // wouldn't dirty the role row — guarantees `updated_by`/`updated_at`

@@ -2,7 +2,9 @@
 // A page's intro elements. Page-level actions (the default slot, e.g. a "New …"
 // button) teleport up into the layout's title row (#page-actions) so they align
 // right of the heading. An optional muted description renders here in the page
-// body, above the content. The heading itself comes from <AppPageTitle>.
+// body, above the content — pass the `description` prop for plain text, or use
+// the `#description` slot for rich content (e.g. emphasizing part of it). The
+// heading itself comes from <AppPageTitle>.
 defineProps<{ description?: string }>()
 </script>
 
@@ -20,9 +22,11 @@ defineProps<{ description?: string }>()
   </Teleport>
 
   <p
-    v-if="description"
+    v-if="description || $slots.description"
     class="text-body-medium text-medium-emphasis mb-6"
   >
-    {{ description }}
+    <slot name="description">
+      {{ description }}
+    </slot>
   </p>
 </template>

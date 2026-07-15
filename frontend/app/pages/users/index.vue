@@ -18,6 +18,7 @@ const usersApi = useUsers()
 const rolesApi = useRoles()
 
 const canManage = computed(() => can(PERMISSIONS.UsersManage))
+const canViewActivity = computed(() => can(PERMISSIONS.ActivityView))
 
 // Protected accounts (super-admin / System) can't be edited or deleted — the
 // API enforces it and reports it via `is_protected`.
@@ -106,7 +107,7 @@ const headers = computed(() => [
   { title: t('table.updatedBy'), key: 'updated_by', sortable: false },
   { title: t('table.createdAt'), key: 'created_at' },
   { title: t('table.updatedAt'), key: 'updated_at' },
-  ...(canManage.value
+  ...(canManage.value || canViewActivity.value
     ? [{ title: t('table.actions'), key: 'actions', sortable: false, align: 'end' as const }]
     : [])
 ])
@@ -530,39 +531,47 @@ async function onDeactivate() {
         </template>
 
         <template
-          v-if="canManage"
+          v-if="canManage || canViewActivity"
           #[`item.actions`]="{ item }"
         >
           <div class="text-no-wrap">
+            <template v-if="canManage">
+              <AppTableAction
+                icon="mdi-email-sync-outline"
+                :tooltip="resendTooltip(item)"
+                :disabled="item.is_protected || item.is_verified"
+                @click="resendInvite(item)"
+              />
+              <AppTableAction
+                icon="mdi-pencil-outline"
+                :tooltip="item.is_protected ? $t('users.protectedTooltip') : $t('common.edit')"
+                :disabled="item.is_protected"
+                @click="openEdit(item)"
+              />
+              <AppTableAction
+                icon="mdi-shield-refresh-outline"
+                :tooltip="resetTwoFactorTooltip(item)"
+                :disabled="item.is_protected || !item.two_factor_enabled"
+                @click="openResetTwoFactor(item)"
+              />
+              <AppTableAction
+                :icon="item.is_active ? 'mdi-account-off-outline' : 'mdi-account-check-outline'"
+                :tooltip="activationTooltip(item)"
+                :disabled="item.is_protected || item.id === auth.user?.id"
+                @click="toggleActivation(item)"
+              />
+              <AppTableAction
+                icon="mdi-delete-outline"
+                :tooltip="deleteTooltip(item)"
+                :disabled="item.is_protected || item.id === auth.user?.id"
+                @click="openDelete(item)"
+              />
+            </template>
             <AppTableAction
-              icon="mdi-email-sync-outline"
-              :tooltip="resendTooltip(item)"
-              :disabled="item.is_protected || item.is_verified"
-              @click="resendInvite(item)"
-            />
-            <AppTableAction
-              icon="mdi-pencil-outline"
-              :tooltip="item.is_protected ? $t('users.protectedTooltip') : $t('common.edit')"
-              :disabled="item.is_protected"
-              @click="openEdit(item)"
-            />
-            <AppTableAction
-              icon="mdi-shield-refresh-outline"
-              :tooltip="resetTwoFactorTooltip(item)"
-              :disabled="item.is_protected || !item.two_factor_enabled"
-              @click="openResetTwoFactor(item)"
-            />
-            <AppTableAction
-              :icon="item.is_active ? 'mdi-account-off-outline' : 'mdi-account-check-outline'"
-              :tooltip="activationTooltip(item)"
-              :disabled="item.is_protected || item.id === auth.user?.id"
-              @click="toggleActivation(item)"
-            />
-            <AppTableAction
-              icon="mdi-delete-outline"
-              :tooltip="deleteTooltip(item)"
-              :disabled="item.is_protected || item.id === auth.user?.id"
-              @click="openDelete(item)"
+              v-if="canViewActivity"
+              icon="mdi-history"
+              :tooltip="$t('activityLog.viewHistory')"
+              @click="navigateTo(`/users/${item.id}/activity`)"
             />
           </div>
         </template>

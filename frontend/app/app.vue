@@ -39,6 +39,15 @@ useHead({
   text-transform: capitalize;
 }
 
+/* Title-case input field labels (text fields, selects, autocompletes) so
+   multi-word labels read as Title Case (e.g. "Search Activity", "Date Range").
+   English only, for the reason above; `.v-field-label` only targets input
+   labels, so selection-control (checkbox/radio) labels keep their natural case.
+   Labels are always i18n text, never raw user data. */
+:lang(en) .v-field-label {
+  text-transform: capitalize;
+}
+
 /* Section-card headings (those inside a v-card-item — dialog titles aren't, so
    they keep their own size). MD3 has no token between title-large (22px) and
    title-medium (16px), so this sits one notch below title-large. */

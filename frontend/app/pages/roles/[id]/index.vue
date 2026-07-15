@@ -37,7 +37,21 @@ onMounted(async () => {
 
 <template>
   <div>
-    <AppPageHeader :description="role ? $t('roles.editDescription', { name: role.name }) : undefined" />
+    <AppPageHeader>
+      <template
+        v-if="role"
+        #description
+      >
+        <i18n-t
+          keypath="roles.editDescription"
+          tag="span"
+        >
+          <template #name>
+            <span class="font-weight-bold text-high-emphasis">{{ role.name }}</span>
+          </template>
+        </i18n-t>
+      </template>
+    </AppPageHeader>
     <v-skeleton-loader
       v-if="loading"
       type="article"

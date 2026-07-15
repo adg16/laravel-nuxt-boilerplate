@@ -1,6 +1,7 @@
 <?php
 
 use App\Enums\Permission;
+use App\Http\Controllers\Api\ActivityController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\AvatarController;
 use App\Http\Controllers\Api\ConfigController;
@@ -117,6 +118,11 @@ Route::middleware(['auth:sanctum', EnsureActive::class])->group(function () {
             ->get('settings', [SettingController::class, 'index']);
         Route::middleware('permission:'.Permission::SettingsManage->value)
             ->put('settings/{setting}', [SettingController::class, 'update']);
+
+        // Audit trail — read-only, so no `manage` counterpart. Also serves the
+        // per-record history panels via the subject_type/subject_id filters.
+        Route::middleware('permission:'.Permission::ActivityView->value)
+            ->get('activity', [ActivityController::class, 'index']);
 
     }); // EnsureTwoFactorEnrolled
 });

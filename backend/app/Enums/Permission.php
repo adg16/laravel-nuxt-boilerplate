@@ -25,6 +25,9 @@ enum Permission: string
     case RolesManage = 'roles.manage';
     case SettingsView = 'settings.view';
     case SettingsManage = 'settings.manage';
+    // Read-only audit trail. There's no `manage` counterpart — the log is never
+    // mutated from the UI (pruning is the console `activitylog:clean` command).
+    case ActivityView = 'activity.view';
 
     /**
      * Every permission value, for seeding/syncing and bulk assignment.

@@ -53,6 +53,7 @@ export function useUsers() {
         verification_status: params.verificationStatus?.length ? params.verificationStatus.join(',') : undefined
       }
     }),
+    get: (id: number) => api<User>(`/users/${id}`),
     create: (body: CreateUserPayload) => api<User>('/users', { method: 'POST', body }),
     update: (id: number, body: UserPayload) => api<User>(`/users/${id}`, { method: 'PUT', body }),
     remove: (id: number) => api<{ message: string }>(`/users/${id}`, { method: 'DELETE' }),

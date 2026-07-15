@@ -14,6 +14,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Spatie\Activitylog\Models\Concerns\LogsActivity;
+use Spatie\Activitylog\Support\LogOptions;
 use Spatie\Permission\Traits\HasRoles;
 
 #[Fillable(['name', 'email', 'password'])]
@@ -21,7 +23,22 @@ use Spatie\Permission\Traits\HasRoles;
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
-    use Blameable, HasFactory, HasRoles, Notifiable, TwoFactorAuthenticatable;
+    use Blameable, HasFactory, HasRoles, LogsActivity, Notifiable, TwoFactorAuthenticatable;
+
+    /**
+     * Audit trail: log only the meaningful account columns, only when they
+     * actually change, and never an empty "updated with no changes" row.
+     * Role assignments live in a pivot (not a column), so they're logged
+     * explicitly in UserController — see App\Support\ActivityLogger.
+     */
+    public function getActivitylogOptions(): LogOptions
+    {
+        return LogOptions::defaults()
+            ->useLogName('users')
+            ->logOnly(['name', 'email', 'deactivated_at', 'email_verified_at'])
+            ->logOnlyDirty()
+            ->dontLogEmptyChanges();
+    }
 
     /**
      * The disk avatars live on — the app's default filesystem disk

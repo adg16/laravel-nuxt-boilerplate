@@ -8,18 +8,22 @@
     "cancel": "Cancel",
     "back": "Back",
     "confirm": "Confirm",
+    "done": "Done",
     "save": "Save",
     "edit": "Edit",
     "delete": "Delete",
     "copy": "Copy",
     "noResults": "No results found.",
     "filters": "Filters",
-    "clearFilters": "Clear Filters"
+    "clearFilters": "Clear Filters",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All"
   },
   "nav": {
     "dashboard": "Dashboard",
     "users": "Users",
     "roles": "Roles",
+    "activityLog": "Activity Log",
     "settings": "Settings",
     "security": "Security",
     "profile": "Profile",
@@ -175,6 +179,54 @@
     "deactivateConfirm": {
       "title": "Deactivate user",
       "text": "Deactivate {name}? They'll be signed out and blocked from signing in until reactivated."
+    }
+  },
+  "activityLog": {
+    "description_text": "A record of changes made across the application.",
+    "when": "When",
+    "actor": "Actor",
+    "action": "Action",
+    "subject": "Subject",
+    "system": "System",
+    "noDetails": "No further details.",
+    "changes": "Changes",
+    "empty": "No activity recorded yet.",
+    "history": "History",
+    "historyForUser": "Activity log for user {name}",
+    "historyForRole": "Activity log for role {name}",
+    "viewHistory": "View history",
+    "filters": {
+      "logName": "Area",
+      "event": "Action",
+      "actor": "Actor",
+      "actorHint": "Who made the change",
+      "search": "Search activity",
+      "searchHint": "By subject or changed value",
+      "searchValueHint": "By changed value",
+      "dateRange": "Date range"
+    },
+    "logName": {
+      "users": "Users",
+      "roles": "Roles",
+      "settings": "Settings"
+    },
+    "event": {
+      "created": "Created",
+      "updated": "Updated",
+      "deleted": "Deleted"
+    },
+    "description": {
+      "role_assignment": "Roles changed",
+      "permission_change": "Permissions changed",
+      "setting_changed": "Setting changed"
+    },
+    "field": {
+      "name": "Name",
+      "email": "Email",
+      "deactivated_at": "Deactivation",
+      "email_verified_at": "Verification",
+      "roles": "Roles",
+      "permissions": "Permissions"
     }
   },
   "roles": {
