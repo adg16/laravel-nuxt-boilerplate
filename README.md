@@ -1,80 +1,56 @@
 # laravel-nuxt-boilerplate
 
-A reusable, dockerized starting point for internal/backoffice web apps: a Laravel API backend and a Nuxt SPA frontend, authenticated via Laravel Sanctum's cookie-based SPA auth (with Laravel Fortify driving the auth actions headlessly).
+A reusable, **dockerized starting point for internal / backoffice web apps**: a Laravel API backend and a Nuxt SPA frontend, authenticated via Laravel Sanctum's cookie-based SPA auth (with Laravel Fortify driving the auth actions headlessly). Clone it, and you start with authentication, role-based access control, user management, an audit trail, and a themed Vuetify UI already built.
+
+> Meant to be **cloned as the start of a new project**, not extended in place — keep additions generic/reusable rather than domain-specific.
+
+## What you get
+
+- **Authentication** — Sanctum cookie SPA session + CSRF, driven headlessly by Fortify. Zero CORS config (same-origin). → [docs](docs/authentication.md)
+- **Two-factor auth** — TOTP *and* email codes, with recovery codes; `off`/`optional`/`required` modes an admin toggles at runtime. → [docs](docs/two-factor-authentication.md)
+- **Roles & permissions** — RBAC (spatie) with code-defined permissions, admin-managed roles, and a super-admin bypass. → [docs](docs/authorization.md)
+- **User management** — CRUD, invite-or-set-password onboarding, activation/deactivation, protected + System accounts, avatars, self-service profile & security pages. → [docs](docs/user-management.md)
+- **Application settings** — code-defined keys, admin-editable values, no redeploy. → [docs](docs/settings.md)
+- **Activity log** — a read-only audit trail of who changed what, when. → [docs](docs/activity-log.md)
+- **Queues** — Laravel Horizon with a Super-Admin-gated `/horizon` dashboard. → [docs](docs/queues.md)
+- **Email** — Mailpit catcher in dev, brand-themed mail. → [docs](docs/email.md)
+- **File storage** — MinIO (S3-compatible) in dev, real S3 in prod, streamed through an auth'd route. → [docs](docs/storage.md)
+- **Internationalization** — localized on both tiers; English-only out of the box, adding a locale is a drop-in. → [docs](docs/internationalization.md)
+- **Vuetify 4 UI** — themed, with a shared component kit and Zod-backed form validation. → [docs](docs/frontend.md)
 
 ## Stack
 
-- **Backend**: Laravel 13 (PHP 8.5), API-only — no Blade views
-- **Frontend**: Nuxt 4 (`ssr: false`), Pinia
-- **UI components**: Vuetify 4 (Material Design) with MDI icons (`@mdi/font`)
-- **Auth**: Laravel Sanctum SPA (stateful cookie session + CSRF), with Laravel Fortify driving login/logout/password-reset headlessly
-- **i18n**: `@nuxtjs/i18n` on the frontend + an `Accept-Language` middleware on the backend
-- **Database**: MariaDB
-- **Cache / session / queue**: Redis (separate logical DBs each)
-- **Web server**: nginx — fronts both the API and the SPA on the same origin
+| Layer | Technology |
+|---|---|
+| Backend | Laravel 13 (PHP 8.5), API-only |
+| Frontend | Nuxt 4 SPA (`ssr: false`), Pinia, Vuetify 4 |
+| Auth | Sanctum SPA session + CSRF, driven by Fortify |
+| Database | MariaDB 12 |
+| Cache / session / queue | Redis 8 (three separate logical DBs) + Horizon |
+| Web server | nginx — fronts the API **and** the SPA on one origin |
+| Dev services | Mailpit (mail), MinIO (S3-compatible storage) |
 
-nginx routes `/api`, `/sanctum`, and `/up` to PHP-FPM; everything else goes to the Nuxt dev server in development, or a static `nuxi generate` build in production (no Node process in prod).
-
-Vuetify is wired up manually via `vite-plugin-vuetify` and a Nuxt plugin (`frontend/app/plugins/vuetify.ts`) — there's no Tailwind. That plugin is the single place for the theme (brand colors, light/dark) and app-wide component defaults. Forms use `v-form` + `v-text-field` with rules generated from Zod schemas (`frontend/app/utils/validation.ts`).
-
-## Internationalization
-
-Both tiers are localized, and the project ships with English (`en`) only — the wiring is in place so adding a language is a drop-in.
-
-- **Frontend** — `@nuxtjs/i18n` with `strategy: 'no_prefix'` (one URL per page, no `/en` `/fr` segments). The active locale is detected from the browser once and persisted in a cookie. Messages live in `frontend/i18n/locales/*.json`, and **every user-facing string is a translation key** — no hardcoded literals (including Zod validation messages, aria-labels, and page breadcrumbs/subtitles). A language switcher sits in the app bar and appears automatically once a second locale is configured.
-- **Backend** — the `SetLocale` middleware reads the `Accept-Language` header (sent by the SPA) and sets the app locale to the best match within `config('app.supported_locales')`, so API responses (validation/auth/password-reset messages) localize too. Laravel's translation files live under `backend/lang/<code>/`.
-
-**To add a locale** (e.g. `fr`):
-
-1. `frontend/i18n/locales/fr.json` — copy `en.json` and translate the values.
-2. Add `{ code: 'fr', name: 'Français', language: 'fr-FR', file: 'fr.json' }` to `i18n.locales` in `frontend/nuxt.config.ts`.
-3. Add `'fr'` to `supported_locales` in `backend/config/app.php`.
-4. `cp -r backend/lang/en backend/lang/fr` and translate the message files.
-
-The switcher then lights up on its own. When adding UI, keep the invariant: **new strings go through `$t()` / `t()` with a key in the locale file** — the `stack-review` skill flags hardcoded literals.
-
-## Repo layout
-
-```
-backend/     Laravel API
-frontend/    Nuxt SPA
-docker/      Dockerfiles and service configs (nginx, php, node, mariadb, redis)
-```
+The **same-origin nginx** is the core design decision — it routes `/api`, `/sanctum`, `/up`, `/horizon` to PHP-FPM and everything else to the Nuxt dev server (dev) or a static `nuxi generate` build (prod, no Node process). That's why Sanctum's cookie auth needs no CORS. → [architecture](docs/architecture.md)
 
 ## Quickstart
 
 ```
 git clone <repo> my-new-app
 cd my-new-app
-cp .env.example .env
-make setup   # copies .env files, installs deps, generates key, migrates + seeds
+make setup   # copies .env files, installs deps, generates key, migrates + seeds, installs the git hook
 make up
 ```
 
-The app is served at http://localhost.
+The app is served at **http://localhost**. (`make setup` also copies `.env` for you — no manual `cp` needed.)
 
-## Default user
+## Default login
 
-`make setup` (and `make fresh`) seed a default super-admin via `backend/database/seeders/DatabaseSeeder.php`:
+`make setup` (and `make fresh`) seed a default **super-admin**:
 
 - **Email**: `super.admin@example.com`
 - **Password**: `password`
 
-Override these before deploying anywhere real by setting `DEFAULT_USER_EMAIL` / `DEFAULT_USER_PASSWORD` in `backend/.env`. Re-run seeding any time with `make artisan ARGS=db:seed` (safe to repeat — it won't duplicate the user).
-
-The seeder also creates a permission-less **System** account (`SYSTEM_USER_EMAIL`, default `system@example.com`) with no usable password — it can't log in and is hidden from the user-management list. It exists to attribute app-generated activity (scheduled/automated events) that has no human actor; reference it in code via `User::system()`.
-
-## Email (local development)
-
-Outgoing mail is captured by **Mailpit** — a local SMTP catcher that never delivers anything externally, so you can safely test invitation and password-reset emails. `backend/.env` points `MAIL_MAILER=smtp` at the `mailpit` container (added by `docker-compose.override.yml`), and everything the app sends lands in a web inbox:
-
-**http://localhost:8025** — override the port with `MAILPIT_PORT` in the root `.env`.
-
-Mail is sent on the queue, so the `queue` worker must be running (it is by default) for messages to appear. Emails are brand-themed via the published Laravel mail views in `backend/resources/views/vendor/mail/`.
-
-> Compose injects `backend/.env` into the `php`/`queue` containers at **creation** time, so changes to `MAIL_*` need `docker compose up -d --force-recreate php queue` to take effect — a plain `restart` keeps the old values.
-
-In production, set real SMTP credentials in `backend/.env`; Mailpit only exists in the dev override.
+Override these before deploying anywhere real by setting `DEFAULT_USER_EMAIL` / `DEFAULT_USER_PASSWORD` in `backend/.env`. Re-run seeding any time with `make artisan ARGS=db:seed` (safe to repeat). The seeder also creates a permission-less, non-loginnable **System** account used to attribute automated activity — details in [user-management.md](docs/user-management.md#protected-accounts--visibility-rules).
 
 ## Common commands
 
@@ -84,14 +60,39 @@ In production, set real SMTP credentials in `backend/.env`; Mailpit only exists 
 | `make sh-php` / `make sh-node` | Shell into the php or node container |
 | `make artisan ARGS="migrate:fresh --seed"` | Run an artisan command |
 | `make fresh` | Re-migrate and reseed the database |
-| `make test` | Run backend tests and frontend typecheck |
-| `make lint` | Check code style (Pint) and lint (ESLint) — fails without modifying files |
-| `make lint-fix` | Auto-fix style/lint issues |
+| `make test` | Backend tests + frontend typecheck + Vitest + permission-drift check |
+| `make lint` / `make lint-fix` | Check-only vs auto-fix (Pint + ESLint) |
 | `make logs` | Tail all container logs |
 
-## Code style & pre-commit hook
+Full workflow, testing notes, and the pre-commit hook → [development.md](docs/development.md).
 
-Backend style is enforced with [Laravel Pint](https://laravel.com/docs/pint) (`backend/pint.json`, Laravel preset); frontend linting is ESLint via `@nuxt/eslint`. `make setup` installs a git pre-commit hook (`git config core.hooksPath .githooks`) that runs Pint when staged files touch `backend/*.php` and ESLint when they touch `frontend/*.{vue,ts,js,mjs}`, blocking the commit on failure. If you didn't run `make setup`, install it manually with `make install-hooks`. On failure, run `make lint-fix`, re-stage, and commit again.
+## Documentation
+
+| Topic | |
+|---|---|
+| [Architecture](docs/architecture.md) | Same-origin nginx, Docker layers, Redis DBs, images, `.env` layers |
+| [Development](docs/development.md) | Commands, testing, linting, pre-commit hook, extending |
+| [Authentication](docs/authentication.md) | Sanctum + Fortify flow, password reset, anti-enumeration |
+| [Two-factor auth](docs/two-factor-authentication.md) | TOTP + email, modes/methods, enforcement |
+| [Authorization](docs/authorization.md) | Roles, permissions, gating, blameable |
+| [User management](docs/user-management.md) | CRUD, invitations, protected accounts, avatars, profile |
+| [Settings](docs/settings.md) | Code-defined keys, editable values |
+| [Activity log](docs/activity-log.md) | Audit trail |
+| [Queues](docs/queues.md) | Laravel Horizon |
+| [Email](docs/email.md) | Mailpit + branded mail |
+| [File storage](docs/storage.md) | MinIO / S3 avatars |
+| [Internationalization](docs/internationalization.md) | i18n on both tiers, adding a locale |
+| [Frontend](docs/frontend.md) | Nuxt structure, Vuetify, shared components |
+| [Deployment](docs/deployment.md) | Production overlay + checklist |
+
+## Repo layout
+
+```
+backend/     Laravel API
+frontend/    Nuxt SPA
+docker/      Dockerfiles and service configs (nginx, php, node, mariadb, redis)
+docs/        Feature documentation (see above)
+```
 
 ## Production
 
@@ -99,4 +100,8 @@ Backend style is enforced with [Laravel Pint](https://laravel.com/docs/pint) (`b
 docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
 ```
 
-This builds the Nuxt SPA to static assets and serves them directly from nginx — the base `docker-compose.yml` is prod-leaning by default (no `node` service); `docker-compose.override.yml` (auto-loaded by plain `docker compose up`) is what switches to the Nuxt dev server for local development.
+Builds the SPA to static assets served directly by nginx (no `node` service). Read the [production checklist](docs/deployment.md#production-checklist) before deploying — it covers the env vars, seeded-user, mail, storage, and queue steps.
+
+## License
+
+See [LICENSE](LICENSE).

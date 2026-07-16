@@ -6,6 +6,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A reusable, dockerized boilerplate for internal/backoffice web apps: Laravel 13 (PHP 8.5) API backend + Nuxt 4 SPA frontend (`ssr: false`), authenticated via Laravel Sanctum's cookie-based SPA auth (with Laravel Fortify driving the auth actions headlessly). Meant to be cloned as the starting point for new projects, not extended in place — keep additions generic/reusable rather than domain-specific.
 
+> Human-facing feature docs live in `README.md` + `docs/*.md` (one file per feature: authentication, authorization, user-management, activity-log, etc.). This file is the agent-facing companion — when a change alters behavior those docs describe, update the matching `docs/*.md` too (see the **Documentation** note in the stack-review skill).
+
 ## Commands
 
 All commands run through Docker; there is no local PHP/Node toolchain expected on the host.
