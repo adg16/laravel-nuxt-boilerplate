@@ -43,6 +43,13 @@ return new class extends Migration
             }
             $table->string('name');
             $table->string('guard_name');
+
+            // Blame columns: who created / last updated the role. Nullable (seeder,
+            // console, or guest writes have no actor) and nullOnDelete so deleting
+            // the acting user doesn't block/cascade. Mirrors the users table.
+            $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
+            $table->foreignId('updated_by')->nullable()->constrained('users')->nullOnDelete();
+
             $table->timestamps();
             if ($teams || config('permission.testing')) {
                 $table->unique([$columnNames['team_foreign_key'], 'name', 'guard_name']);

@@ -26,6 +26,14 @@ return new class extends Migration
             $table->json('attribute_changes')->nullable();
             $table->json('properties')->nullable();
             $table->timestamps();
+
+            // The log is read newest-first on every request
+            // (`ORDER BY created_at DESC, id DESC`); spatie's published table only
+            // indexes log_name/subject/causer. Index created_at so that sort — and
+            // the date-range filter — is a cheap index scan rather than a full-table
+            // filesort as the table grows. (InnoDB appends the PK, covering the `id`
+            // tie-breaker.)
+            $table->index('created_at');
         });
     }
 };
